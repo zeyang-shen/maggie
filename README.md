@@ -1,3 +1,5 @@
+![maggie_simpson](https://user-images.githubusercontent.com/33430859/50864683-abfbd000-1357-11e9-8973-2bf7e3ca6dcd.png)
+
 # MAGGIE
 MAGGIE provides a framework for 
 
@@ -37,13 +39,13 @@ python ./bin/compute_score_diff.py -h
 
 ## Contact
 If you enconter a problem when using the software, you can
-1. search your question in [FAQ](https://github.com/...) or
-2. post an issue on [Issue](https://github.com/....) section or
-3. email Zeyang Shen by zes017@ucsd.edu
+1. search your question in [FAQ](https://github.com/...)
+2. or post an issue on [Issue](https://github.com/zeyang-shen/maggie/issues) section
+3. or email Zeyang Shen by zes017@ucsd.edu
 
 ## License
 
-`This project is licensed under GNU GPL v3 <https://github.com/[...]/LICENSE>`__
+[This project is licensed under GNU GPL v3](https://github.com/zeyang-shen/maggie/blob/master/LICENSE)
 
 ## Contributors
-MARGGIE was developed primarily by Zeyang Shen, with significant contributions and suggestions by Marten Hoeksema. Supervision for the project was provided by Professor Christopher K. Glass. 
+MAGGIE was developed primarily by Zeyang Shen, with significant contributions and suggestions by Marten Hoeksema. Supervision for the project was provided by Professor Christopher K. Glass. 

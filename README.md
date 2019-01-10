@@ -1,7 +1,7 @@
 ![maggie_simpson](https://user-images.githubusercontent.com/33430859/50864683-abfbd000-1357-11e9-8973-2bf7e3ca6dcd.png)
 
 # MAGGIE
-MAGGIE provides a framework for 
+MAGGIE provides a framework for analyzing transcription factor motifs within DNA regulatory elements and for detecting effects of mutations on motifs when studying different conditions, individuals, genotypes, etc. 
 
 ## Environment setup and installation
 Anaconda is required for environment setup and package installation (https://www.anaconda.com/download/#macos). After installing the anaconda, run the following commands to create an environment with required dependencies so that your home environment will not be affected:

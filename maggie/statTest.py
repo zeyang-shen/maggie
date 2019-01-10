@@ -8,27 +8,12 @@ from Bio import motifs
 from Bio import SeqIO
 
 from scipy.stats import ttest_1samp
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
 
-
-def merge_score_diff(score_diff_files, cut_percent=0):
-    print('Merging files:')
-    all_files_df = pd.DataFrame()
-    for file in score_diff_files:
-        print('--', file)
-        diff_df = pd.read_csv(file, sep='\t', index_col=0)
-        all_files_df = pd.concat([all_files_df, diff_df.T], axis=1)
-    motifs = all_files_df.index.values
-    
-    # filter out distrurbing outliers of each motif
-    print('Filtering out', cut_percent*100, '% outliers')
-    X = []
-    for i in range(len(all_files_df)):
-        df = all_files_df.iloc[i]
-        cut_df = pd.qcut(df, [cut_percent, 1-cut_percent])
-        X.append(np.array(df.loc[cut_df.notnull()]))
-    X = np.array(X)
-    
-    return X, motifs
+import sys
+sys.path.append('..')
+from maggie import score
 
 
 def Ttest(X, motifs=None, save=True, prefix=None):
@@ -106,4 +91,26 @@ def Filter(stats_files, sig_t=0.01, tpm_file=None, exp_t=5):
         tpm_filt_df = sig_tpm.loc[expr_bools]
         return expr_filt_df, tpm_filt_df
     
-    
+def display_logos(motif_list, save_path):
+    motif_dict = score.load_motifs()
+    fig = plt.figure(figsize=(3,len(motif_list)))
+    plt.subplots_adjust(top = 2, bottom = 0, right = 1, left = 0, hspace = 0.4, wspace = 0)
+    for i,val in enumerate(motif_list):
+        if i % 10 == 0:
+            print('Generating motif', i+1)
+        bio_motif = motif_dict[val]
+        logo_file = 'tmp_logo'+str(i)+'.png'
+        bio_motif.weblogo(logo_file, format='png', stack_width='large', 
+                          show_errorbars=False, scale_width=False, show_fineprint=False, 
+                          show_yaxis=False, show_xaxis=True,
+                          color_scheme='color_classic'
+                         )
+        img = mpimg.imread(logo_file)
+        ax = fig.add_subplot(len(motif_list),1,i+1)
+        ax.imshow(img)
+        ax.axis('off')
+        plt.title(val)
+        os.remove(logo_file)
+    fig.savefig(save_path, bbox_inches='tight')
+    plt.close()
+    print('Motif logos saved to', save_path)

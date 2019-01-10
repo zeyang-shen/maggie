@@ -9,6 +9,19 @@ from Bio import motifs
 from Bio import SeqIO
 
 
+def read_fasta(fasta_file):
+    '''
+    Read in sequences
+    '''
+    alphabet = Bio.Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA() # need to use this alphabet for motif score calculation
+    id_seq_dict = {} # {sequenceID: fastq sequence}
+    for seq_record in SeqIO.parse(fasta_file, "fasta"):  
+        seq_record.seq.alphabet = alphabet
+        id_seq_dict[seq_record.id] = seq_record.seq
+        
+    return id_seq_dict
+
+
 def load_motifs(motif_dir="/home/zes017/Spacing/Data/JASPAR2018_CORE_vertebrates_non-redundant_pfms_jaspar/"):
     '''read in motifs: motifs have to be in jaspar format'''
     motif_dict = {}
@@ -85,18 +98,26 @@ def compute_score_difference(motifScore_df, reverse=False):
     motifScore_diff = motifScore_diff.loc[~drop_bools]
     
     return motifScore_diff
-    
 
-def read_fasta(fasta_file):
-    '''
-    Read in sequences
-    '''
-    alphabet = Bio.Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA() # need to use this alphabet for motif score calculation
-    id_seq_dict = {} # {sequenceID: fastq sequence}
-    for seq_record in SeqIO.parse(fasta_file, "fasta"):  
-        seq_record.seq.alphabet = alphabet
-        id_seq_dict[seq_record.id] = seq_record.seq
-        
-    return id_seq_dict
+
+def merge_score_diff(score_diff_files, cut_percent=0):
+    print('Merging files:')
+    all_files_df = pd.DataFrame()
+    for file in score_diff_files:
+        print('--', file)
+        diff_df = pd.read_csv(file, sep='\t', index_col=0)
+        all_files_df = pd.concat([all_files_df, diff_df.T], axis=1)
+    motifs = all_files_df.index.values
+    
+    # filter out distrurbing outliers of each motif
+    print('Filtering out', cut_percent*100, '% outliers')
+    X = []
+    for i in range(len(all_files_df)):
+        df = all_files_df.iloc[i]
+        cut_df = pd.qcut(df, [cut_percent, 1-cut_percent])
+        X.append(np.array(df.loc[cut_df.notnull()]))
+    X = np.array(X)
+    
+    return X, motifs
     
     

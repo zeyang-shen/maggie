@@ -20,7 +20,7 @@ if __name__ == "__main__":
                         type=str)
     parser.add_argument("--motifPath",
                         help="path to the motif files",
-                        default='../JASPAR2018_CORE_vertebrates_non-redundant_pfms_jaspar/', 
+                        default="../examples/JASPAR2018_CORE_vertebrates_non-redundant_pfms_jaspar/",
                         type=str)
     parser.add_argument("-m", "--motifs", 
                         help="spcify motifs to compute; multiple motifs should be separated by comma like 'SPI1,CEBPB'",
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         raise Exception('# positive sequences unequal to # negative sequences. Make sure your inputs come as pairs')
     
     # Read in motif files
-    motif_dict = score.load_motifs(motif_dir)
+    motif_dict = score.load_motifs(motif_dir, pseudocounts=0.01)
     if args.motifs:
         motif_list = [i for i in args.motifs.split(',')]
     else:

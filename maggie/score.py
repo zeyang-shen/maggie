@@ -11,7 +11,7 @@ from Bio import SeqIO
 from scipy.stats import ttest_1samp, wilcoxon
 
 
-def load_motifs(motif_dir="./JASPAR2018_CORE_vertebrates_non-redundant_pfms_jaspar/", pseudocounts=0.01):
+def load_motifs(motif_dir, pseudocounts=0.01):
     '''
     read in motifs; motifs have to be in jaspar format as below:
     
@@ -95,7 +95,7 @@ def test_one_motif(bio_motif, orig_seq_dict, mut_seq_dict, top_site):
     '''
     orig_score = compute_scores(bio_motif, orig_seq_dict, top_site)
     mut_score = compute_scores(bio_motif, mut_seq_dict, top_site)
-    score_diff = np.array(orig_score[1]) - np.array(mut_score[1])
+    score_diff = list(np.array(orig_score[1]) - np.array(mut_score[1]))
     pv_ = []
     stat_ = []
     for k in range(1000):

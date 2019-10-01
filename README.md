@@ -1,4 +1,4 @@
-# MAGGIE <img src="https://github.com/zeyang-shen/maggie/blob/master/image/Maggie_half.png" width="100" height="100">
+# MAGGIE <img src="https://github.com/zeyang-shen/maggie/blob/master/image/Maggie_half.png" width="120" height="100">
 MAGGIE provides a framework for analyzing transcription factor motifs within DNA regulatory elements and for detecting effects of mutations on motifs when studying different conditions, individuals, genotypes, etc. 
 
 ## Environment setup and installation

@@ -1,123 +1,200 @@
-import numpy as np
-import pandas as pd
+import os
 import multiprocessing as mp
 
-import os
+import numpy as np
+import pandas as pd
 
 import Bio
 from Bio import motifs
 from Bio import SeqIO
 
+from scipy.stats import ttest_1samp, wilcoxon
 
-def read_fasta(fasta_file):
+
+def load_motifs(motif_dir="./JASPAR2018_CORE_vertebrates_non-redundant_pfms_jaspar/", pseudocounts=0.01):
     '''
-    Read in sequences
+    read in motifs; motifs have to be in jaspar format as below:
+    
+        >MA0002.2       RUNX1
+        A  [   287    234    123     57      0     87      0     17     10    131    500 ]
+        C  [   496    485   1072      0     75    127      0     42    400    463    158 ]
+        G  [   696    467    149      7   1872     70   1987   1848    251     81    289 ]
+        T  [   521    814    656   1936     53   1716     13     93   1339   1325   1053 ]
+    
+    Parameters:
+        motif_dir: folder that contains motif files; one file for individual motif
+        pseudocounts: w.r.t. position weight matrix, the probability adding to every nucleotide
     '''
-    alphabet = Bio.Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA() # need to use this alphabet for motif score calculation
-    id_seq_dict = {} # {sequenceID: fastq sequence}
-    for seq_record in SeqIO.parse(fasta_file, "fasta"):  
-        seq_record.seq.alphabet = alphabet
-        id_seq_dict[seq_record.id] = seq_record.seq
-        
-    return id_seq_dict
-
-
-def load_motifs(motif_dir="/home/zes017/Spacing/Data/JASPAR2018_CORE_vertebrates_non-redundant_pfms_jaspar/"):
-    '''read in motifs: motifs have to be in jaspar format'''
     motif_dict = {}
     nuc = ['A', 'C', 'G', 'T']
     for mf in os.listdir(motif_dir):
         with open(motif_dir + mf) as f:
             m = motifs.read(f, 'jaspar')
             counts = np.array([m.counts[n] for n in nuc])
-            m.pseudocounts = np.mean(counts.sum(axis=0))//10
+            avg_counts = counts.sum(axis=0).mean()
+            m.pseudocounts = avg_counts*pseudocounts
             m.background = None
             motif_dict[m.name] = m
             
     return motif_dict
 
 
-def compute_scores(motif_dict, motif, seq_dict):
-    fwd_pssm = motif_dict[motif].pssm
+def compute_scores(bio_motif, seq_dict, top_site):
+    '''
+    compute motif scores across sequences and 
+    output top scores to represent log-likelihood of being bound by transcription factor
+    
+    Parameters:
+        bio_motif: Bio motif object used to compute motif scores
+        seq_dict: python dictionary containing sequences in IUPAC alphabet
+        top_site: the number of top motif scores output for downstream analysis
+    
+    Outputs:
+        (motif name, motif scores, positions of scores on sequence)
+    '''
+    fwd_pssm = bio_motif.pssm
     rev_pssm = fwd_pssm.reverse_complement()
     scores = []
+    pos = []
     sorted_ids = sorted(seq_dict.keys())
     
     for sid in sorted_ids:
         seq = seq_dict[sid]
         fwd_scores = fwd_pssm.calculate(seq) # scores for forward orientation
         rev_scores = rev_pssm.calculate(seq) # scores for reverse orientation
-            
-        # get the highest score in forward direction
-        try:
-            max_fwd_score = np.max(fwd_scores)
-        except ValueError:
-            max_fwd_score = fwd_pssm.min
-        # get the highest score in reverse direction
-        try:
-            max_rev_score = np.max(rev_scores)
-        except ValueError:
-            max_rev_score = rev_pssm.min
-
-        # determine which orientation is better
-        if max_fwd_score > max_rev_score:
-            scores.append(max_fwd_score)
+        
+        concat_scores = list(fwd_scores) + list(rev_scores)
+        if len(concat_scores) < 0:
+            max_scores = [0]
+            max_pos = [-1]
         else:
-            scores.append(max_rev_score)
+            max_pos = np.argsort(concat_scores)[::-1][:top_site]
+            max_scores = np.array(concat_scores)[max_pos]
+        max_scores = np.nan_to_num(max_scores, 0)
+        max_scores = max_scores*(max_scores > 0)
+        scores.append(np.log2(np.sum(2**max_scores))) #additive log-likelihood
+#         scores.append(np.sum(max_scores))
+        pos.append(max_pos%len(fwd_scores))
             
-    return motif, scores
+    return bio_motif.name, scores, pos
 
 
-def compute_scores_parallel(motif_dict, motif_list, seq_dict, p=1):
+def test_one_motif(bio_motif, orig_seq_dict, mut_seq_dict, top_site):
     '''
-    Compute motif scores in parallel
+    test for score differences of one motif
+    positive and negative sequences are required to have aligned IDs
+    
+    Parameters:
+        bio_motif: Bio motif object used to compute motif scores
+        orig_seq_dict: python dictionary containing positive sequences
+        mut_seq_dict: python dictionary containing negative sequences
+        top_site: the number of top motif scores output for downstream analysis
+    
+    Outputs:
+        (motif name, statistic, p value, score differences)
     '''
+    orig_score = compute_scores(bio_motif, orig_seq_dict, top_site)
+    mut_score = compute_scores(bio_motif, mut_seq_dict, top_site)
+    score_diff = np.array(orig_score[1]) - np.array(mut_score[1])
+    pv_ = []
+    stat_ = []
+    for k in range(1000):
+        score_diff_sampled = np.random.choice(score_diff, replace=True, size=len(score_diff))
+        tmp_stat, tmp_pv = wilcoxon(score_diff_sampled)
+        pv_.append(-np.log10(tmp_pv)*np.sign(np.median(score_diff_sampled[score_diff_sampled!=0])))
+        stat_.append(tmp_stat)
+    return (bio_motif.name, stat_, pv_, score_diff)
+
+
+def test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=1, p=1, motif_list=None):
+    '''
+    test for all motifs in the given dictionary
+    positive and negative sequences are required to have aligned IDs
+    
+    Parameters:
+        motif_dict: Bio motif object used to compute motif scores
+        orig_seq_dict: python dictionary containing positive sequences
+        mut_seq_dict: python dictionary containing negative sequences
+        top_site: the number of top motif scores output for downstream analysis
+        p: specify th number of cores to do parrelel processes
+    
+    Outputs:
+        A pandas dataframe including all the results
+    '''
+    if not motif_list:
+        motif_list = np.sort(list(motif_dict.keys()))
     pool = mp.Pool(processes=p)
-    results = [pool.apply_async(compute_scores, args=(motif_dict, motif, seq_dict)) for motif in motif_list]
-    results = [p.get() for p in results]
-    sorted_ids = sorted(seq_dict.keys())
+    results = [pool.apply_async(test_one_motif, args=(motif_dict[m], orig_seq_dict, mut_seq_dict, top_site)) 
+               for m in motif_list]
+    results = [r.get() for r in results]
+    # format results to panda dataframe
+    results_df = pd.DataFrame(results)
+    results_df.columns = ['motif', 'stats list', 'p-val list', 'score difference']
+    results_df = results_df.set_index('motif')
+    results_df['10% stats'] = [np.percentile(r, 10) for r in results_df['stats list']]
+    results_df['Median stats'] = [np.percentile(r, 50) for r in results_df['stats list']]
+    results_df['90% stats'] = [np.percentile(r, 90) for r in results_df['stats list']]
+    results_df['10% p-val'] = [np.percentile(r, 10) for r in results_df['p-val list']]
+    results_df['Median p-val'] = [np.percentile(r, 50) for r in results_df['p-val list']]
+    results_df['90% p-val'] = [np.percentile(r, 90) for r in results_df['p-val list']]
+    results_df = results_df[['10% stats', 'Median stats', '90% stats', 
+                             '10% p-val', 'Median p-val', '90% p-val', 
+                             'score difference', 'stats list', 'p-val list']]
     
-    # Combine results from multiple processors
-    motif_score_dict = {}
-    for r in results:
-        motif, score = r
-        motif_score_dict[motif] = score
-    motif_score_df = pd.DataFrame(motif_score_dict, index=sorted_ids)
-    
-    return motif_score_df
+    return results_df
 
 
-def compute_score_difference(motifScore_df, reverse=False):
-    group_region = motifScore_df.T.groupby(np.arange(len(motifScore_df))//2, axis=1)
-    if reverse:
-        motifScore_diff = group_region.diff().T.iloc[1::2]
-    else:
-        motifScore_diff = -group_region.diff().T.iloc[1::2]
-    drop_bools = np.any(motifScore_diff.isnull(), axis=1)
-    print('# drop:', sum(drop_bools))
-    motifScore_diff = motifScore_diff.loc[~drop_bools]
-    
-    return motifScore_diff
+def merge_tuple(lsts):
+    '''
+    Merge tuples
+    '''
+    sets = [set(lst) for lst in lsts if lst]
+    merged = True
+    while merged:
+        merged = False
+        results = []
+        while sets:
+            common, rest = sets[0], sets[1:]
+            sets = []
+            for x in rest:
+                if x.isdisjoint(common):
+                    sets.append(x)
+                else:
+                    merged = True
+                    common |= x
+            results.append(common)
+        sets = results
+    return sets
 
 
-def merge_score_diff(score_diff_files, cut_percent=0):
-    print('Merging files:')
-    all_files_df = pd.DataFrame()
-    for file in score_diff_files:
-        print('--', file)
-        diff_df = pd.read_csv(file, sep='\t', index_col=0)
-        all_files_df = pd.concat([all_files_df, diff_df.T], axis=1)
-    motifs = all_files_df.index.values
+def combine_similar_motifs(input_df, similarity_cutoff=0.6):
+    '''
+    merge the results of similar motifs to reduce the long list
     
-    # filter out distrurbing outliers of each motif
-    print('Filtering out', cut_percent*100, '% outliers')
-    X = []
-    for i in range(len(all_files_df)):
-        df = all_files_df.iloc[i]
-        cut_df = pd.qcut(df, [cut_percent, 1-cut_percent])
-        X.append(np.array(df.loc[cut_df.notnull()]))
-    X = np.array(X)
+    Input:
+        input_df: the results dataframe output from function "test_all_motifs"
     
-    return X, motifs
+    Parameters:
+        similarity_cutoff: cutoff correlation coefficient for calling similar motifs (default: 0.6)
     
+    Outputs:
+        Average statistics and p-values for merged sets of similar motifs
+    '''
+    motif_names = input_df.index.values
+    score_diffs = np.array([r for r in input_df['score difference']])
+    corr_df = pd.DataFrame(np.corrcoef(score_diffs), index=motif_names, columns=motif_names)
+    
+    tuple_list = np.array(corr_df[corr_df < 1][corr_df > similarity_cutoff].stack().index)
+    merge_sets = merge_tuple(tuple_list)
+    rest_list = [{s} for s in set(motif_names)-set([element for tup in tuple_list for element in tup])]
+    merge_sets += rest_list
+    
+    merge_stats = pd.DataFrame()
+    for s in merge_sets:
+        mean_set = input_df.loc[list(s)].iloc[:,:6].mean(axis=0)
+        mean_set.name = '|'.join(list(s))
+        merge_stats = pd.concat([merge_stats, mean_set], axis=1)
+    merge_stats = merge_stats.T
+
+    return merge_stats    
     

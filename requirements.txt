@@ -1,6 +1,1 @@
-numpy
-pandas
-biopython==1.70
-scipy==1.1.0
-matplotlib==2.0.2
-seaborn==0.7.1
+logomaker==0.7

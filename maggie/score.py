@@ -131,15 +131,16 @@ def test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=1, p=1, mo
     results_df = pd.DataFrame(results)
     results_df.columns = ['motif', 'stats list', 'p-val list', 'score difference']
     results_df = results_df.set_index('motif')
-    results_df['10% stats'] = [np.percentile(r, 10) for r in results_df['stats list']]
+    results_df['5% stats'] = [np.percentile(r, 5) for r in results_df['stats list']]
     results_df['Median stats'] = [np.percentile(r, 50) for r in results_df['stats list']]
-    results_df['90% stats'] = [np.percentile(r, 90) for r in results_df['stats list']]
-    results_df['10% p-val'] = [np.percentile(r, 10) for r in results_df['p-val list']]
+    results_df['95% stats'] = [np.percentile(r, 95) for r in results_df['stats list']]
+    results_df['5% p-val'] = [np.percentile(r, 5) for r in results_df['p-val list']]
     results_df['Median p-val'] = [np.percentile(r, 50) for r in results_df['p-val list']]
-    results_df['90% p-val'] = [np.percentile(r, 90) for r in results_df['p-val list']]
-    results_df = results_df[['10% stats', 'Median stats', '90% stats', 
-                             '10% p-val', 'Median p-val', '90% p-val', 
+    results_df['95% p-val'] = [np.percentile(r, 95) for r in results_df['p-val list']]
+    results_df = results_df[['5% stats', 'Median stats', '95% stats', 
+                             '5% p-val', 'Median p-val', '95% p-val', 
                              'score difference', 'stats list', 'p-val list']]
+    results_df = results_df.fillna(0)
     
     return results_df
 
@@ -193,7 +194,7 @@ def combine_similar_motifs(input_df, similarity_cutoff=0.6):
     for s in merge_sets:
         mean_set = input_df.loc[list(s)].iloc[:,:6].mean(axis=0)
         mean_set.name = '|'.join(list(s))
-        merge_stats = pd.concat([merge_stats, mean_set], axis=1)
+        merge_stats = pd.concat([merge_stats, mean_set], axis=1, sort=True)
     merge_stats = merge_stats.T
 
     return merge_stats    

@@ -2,7 +2,7 @@
 import sys
 sys.path.append('..')
 
-from maggie import score, utils
+from maggie import score, utils, visual
 
 import numpy as np
 import pandas as pd
@@ -26,8 +26,8 @@ if __name__ == "__main__":
                         help="spcify motifs to compute; multiple motifs should be separated by comma like 'SPI1,CEBPB'",
                         type=str)
     parser.add_argument("-o", "--output", 
-                        help="name of the output file",
-                        default='maggie_output.tsv',
+                        help="output directory",
+                        default='.',
                         type=str)
     parser.add_argument("-p", "--processor", 
                         help="number of processors to run",
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     orig_file = args.originalFile
     mut_file = args.mutatedFile
     motif_dir = args.motifPath
-    output_file = args.output
+    output_dir = args.output
     proc = args.processor
     
     # read in sequences
@@ -65,12 +65,16 @@ if __name__ == "__main__":
     
     # Run Maggie pipeline
     results = score.test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=1, p=proc, motif_list=motif_list)
-    results.to_csv(output_file, sep='\t')
+    results.to_csv(output_dir+'/maggie_output.tsv', sep='\t')
     
     # Combine similar motifs
     merge_stats = score.combine_similar_motifs(results, 0.6)
+    merge_stats.to_csv(output_dir+'/maggie_output_merged.tsv', sep='\t')
     sig_motifs = utils.FDR_cutoff(np.abs(merge_stats['Median p-val']), alpha=0.05)
-    merge_stats.loc[sig_motifs].to_csv(output_file.split('.')[0]+'_mergedSignificant.'+output_file.split('.')[1], sep='\t')
+    merge_stats.loc[sig_motifs].to_csv(output_dir+'/maggie_output_mergedSignificant.tsv', sep='\t')
     
+    # Visualization files
+    visual.save_logos(motif_dict, folder=output_dir)
+    visual.generate_html(folder=output_dir)
     
     

@@ -26,7 +26,7 @@ import maggie
 All the command line tools are stored in the 'bin' directory. Below is an example of using MAGGIE with FASTA files as inputs:
 ```
 cd maggie
-python ./bin/maggie_computation_fasta_input.py ./examples/data/ENCODE_K562_CTCF/CTCF_orig.fa ./examples/data/ENCODE_K562_CTCF/CTCF_mut.fa -o . -p 1
+python ./bin/maggie_computation_fasta_input.py ./examples/data/ENCODE_K562_CTCF/CTCF_orig.fa ./examples/data/ENCODE_K562_CTCF/CTCF_mut.fa -o ./examples/data/ENCODE_K562_CTCF/ -p 1
 ```
 
 

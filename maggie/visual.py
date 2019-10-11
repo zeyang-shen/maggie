@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 import seaborn as sns
 import logomaker as lm
 
@@ -43,7 +44,7 @@ def save_logos(motif_dict, folder='.', input_file='maggie_output_mergedSignifica
 def generate_html(folder='.', input_file='maggie_output_mergedSignificant.tsv'):
     read_df = pd.read_csv(folder+'/'+input_file, sep='\t', index_col=0)
     
-    # Universal designs
+    # universal designs
     header = '<head>\n<title>Maggie results</title>\n</head>'
     basic_setup = '<body bgcolor="white" text="black">\n<table border="2" align="center" width="30%" height="40%" bordercolor="grey" cellspacing="5" cellpadding="30">'
     caption = '<caption><font size="6", color="green"><b>Significant functional motifs</b></font></caption>'

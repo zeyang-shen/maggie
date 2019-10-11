@@ -194,7 +194,7 @@ def combine_similar_motifs(input_df, similarity_cutoff=0.6):
     for s in merge_sets:
         mean_set = input_df.loc[list(s)].iloc[:,:6].mean(axis=0)
         mean_set.name = '|'.join(list(s))
-        merge_stats = pd.concat([merge_stats, mean_set], axis=1, sort=True)
+        merge_stats = pd.concat([merge_stats, mean_set], axis=1)
     merge_stats = merge_stats.T
 
     return merge_stats    

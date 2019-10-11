@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 sys.path.append('..')
+sys.path.append('.')
 
 from maggie import score, utils, visual
 
@@ -20,7 +21,7 @@ if __name__ == "__main__":
                         type=str)
     parser.add_argument("--motifPath",
                         help="path to the motif files",
-                        default="../examples/JASPAR2018_CORE_vertebrates_non-redundant_pfms_jaspar/",
+                        default="./examples/JASPAR2018_CORE_vertebrates_non-redundant_pfms_jaspar/",
                         type=str)
     parser.add_argument("-m", "--motifs", 
                         help="spcify motifs to compute; multiple motifs should be separated by comma like 'SPI1,CEBPB'",
@@ -62,6 +63,13 @@ if __name__ == "__main__":
         motif_list = [i for i in args.motifs.split(',')]
     else:
         motif_list = list((motif_dict.keys()))
+    
+    # Create folder to store outputs
+    try:
+        os.mkdir(output_dir+'/maggie_output/')
+    except:
+        pass
+    output_dir = output_dir+'/maggie_output/'
     
     # Run Maggie pipeline
     results = score.test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=1, p=proc, motif_list=motif_list)

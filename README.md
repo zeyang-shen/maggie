@@ -44,4 +44,4 @@ If you enconter a problem when using the software, you can
 [This project is licensed under GNU GPL v3](https://github.com/zeyang-shen/maggie/blob/master/LICENSE)
 
 ## Contributors
-MAGGIE was developed primarily by Zeyang Shen, with contributions and suggestions by Chris Benner, Marten Hoeksema, and Zhengyu Ouyang. Supervision for the project was provided by Christopher K. Glass. 
+MAGGIE was developed primarily by Zeyang Shen, with contributions and suggestions by Marten Hoeksema, and Zhengyu Ouyang. Supervision for the project was provided by Christopher K. Glass and Chris Benner. 

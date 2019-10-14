@@ -1,6 +1,9 @@
 # MAGGIE <img src="https://github.com/zeyang-shen/maggie/blob/master/image/Maggie_half.png" width="120" height="100">
 MAGGIE provides a framework for analyzing transcription factor motifs within DNA regulatory elements and for detecting effects of mutations on motifs when studying different conditions, individuals, genotypes, etc. 
 
+The overview of the method is as below:
+<img src="https://github.com/zeyang-shen/maggie/blob/master/image/method.png" width="600" height="896">
+
 ## Environment setup and installation
 Anaconda is required for environment setup and package installation (https://www.anaconda.com/download/#macos). After installing the anaconda, run the following commands to automatically create an environment named "maggie" with required dependencies so that your home environment will not be affected:
 ```

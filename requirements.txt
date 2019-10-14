@@ -1,0 +1,1 @@
+logomaker==0.7

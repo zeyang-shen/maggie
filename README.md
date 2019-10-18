@@ -22,6 +22,11 @@ After setting up a new environment, activate the environment and you are ready t
 conda activate maggie
 ```
 
+Finally, clone the github folder:
+```
+git clone https://github.com/zeyang-shen/maggie.git
+```
+
 ## Quick Usage
 ### Python package
 ```

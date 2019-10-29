@@ -9,35 +9,39 @@ The overview of the method is as below:
 
 ## Environment setup and installation
 Anaconda is required for environment setup and package installation (https://www.anaconda.com/download/#macos). After installing the anaconda, run the following commands to automatically create an environment named "maggie" with required dependencies so that your home environment will not be affected:
-```
+```bash
 conda env create --file environment.yml
 ```
 And then use pip to install required packages listed in requirements.txt:
-```
+```bash
 pip install -r requirements.txt
 ```
 
 After setting up a new environment, activate the environment and you are ready to run your own analysis:
-```
+```bash
 conda activate maggie
 ```
 
 Finally, clone the github folder:
-```
+```bash
 git clone https://github.com/zeyang-shen/maggie.git
 ```
 
 ## Quick Usage
 ### Python package
-```
+```python
 import maggie
 ```
 
 ### Command lines
 All the command line tools are stored in the 'bin' directory. Below is an example of using MAGGIE with FASTA files as inputs:
-```
-$ cd maggie
-$ python ./bin/maggie_computation_fasta_input.py ./examples/data/ENCODE_K562_CTCF/CTCF_orig.fa ./examples/data/ENCODE_K562_CTCF/CTCF_mut.fa -o ./examples/data/ENCODE_K562_CTCF/ -p 1
+```bash
+cd maggie
+python ./bin/maggie_computation_fasta_input.py \
+./examples/data/ENCODE_K562_CTCF/CTCF_orig.fa \
+./examples/data/ENCODE_K562_CTCF/CTCF_mut.fa \
+-o ./examples/data/ENCODE_K562_CTCF/ \
+-p 1
 ```
 
 ## Contact

@@ -41,6 +41,9 @@ if __name__ == "__main__":
                         help="number of top motif scores to be used to compute for representative motif score, default = 1",
                         default=1,
                         type=int)
+    parser.add_argument("--save", 
+                        help="Flag indicating whether to save the original outputs for individual motifs. This file can be large, default = False",
+                        action='store_true')
     parser.add_argument("-p", "--processor", 
                         help="number of processors to run",
                         default=1,
@@ -54,6 +57,10 @@ if __name__ == "__main__":
     mCut = args.mCut
     sCut = args.sCut
     top = args.T
+    save = args.save
+    if not save:
+        print('WARNING: will not save outputs for individual motifs!')
+        print('If you would like to save original outputs, please specify "--save"\n')
     proc = args.processor
     
     # read in sequences
@@ -88,7 +95,8 @@ if __name__ == "__main__":
     print('Running MAGGIE on %d motifs for %d sequences with %d parallel process\n  Estimate run time: %.1f minutes' % 
           (len(motif_list), len(orig_seq_dict), proc, len(orig_seq_dict)*len(motif_list)/proc*3e-5)) # switch to a progress bar
     results = score.test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=top, p=proc, motif_list=motif_list)
-    results.to_csv(output_dir+'/maggie_output.tsv', sep='\t')
+    if save:
+        results.to_csv(output_dir+'/maggie_output.tsv', sep='\t')
     
     # Combine similar motifs
     merge_stats = score.combine_similar_motifs(results, mCut)

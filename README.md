@@ -12,11 +12,6 @@ Anaconda is required for environment setup and package installation (https://www
 ```bash
 conda env create --file environment.yml
 ```
-And then use pip to install required packages listed in requirements.txt:
-```bash
-pip install -r requirements.txt
-```
-
 After setting up a new environment, activate the environment and you are ready to run your own analysis:
 ```bash
 conda activate maggie

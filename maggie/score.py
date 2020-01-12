@@ -126,10 +126,21 @@ def test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=1, p=1, mo
     '''
     if not motif_list:
         motif_list = np.sort(list(motif_dict.keys()))
+    # parallel processing to compute motif score differences
     pool = mp.Pool(processes=p)
-    results = [pool.apply_async(test_one_motif, args=(motif_dict[m], orig_seq_dict, mut_seq_dict, top_site)) 
-               for m in motif_list]
+    try:
+        from tqdm import tqdm # load package to show the progress bar
+        pbar = tqdm(total=len(motif_list))
+        results = [pool.apply_async(test_one_motif, args=(motif_dict[m], orig_seq_dict, mut_seq_dict, top_site), 
+                                    callback=lambda _: pbar.update(1)) 
+                   for m in motif_list]
+    except:
+        print('Missing package to show the progress')
+        results = [pool.apply_async(test_one_motif, args=(motif_dict[m], orig_seq_dict, mut_seq_dict, top_site)) 
+                   for m in motif_list]
     results = [r.get() for r in results]
+    pool.close()
+    pool.join()
     # format results to panda dataframe
     results_df = pd.DataFrame(results)
     results_df.columns = ['motif', 'id', 'stats list', 'p-val list', 'score difference']

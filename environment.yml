@@ -1,4 +1,4 @@
-name: maggie
+name: maggie_test
 channels:
 - bioconda
 dependencies:

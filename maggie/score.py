@@ -4,14 +4,12 @@ import multiprocessing as mp
 import numpy as np
 import pandas as pd
 
-import Bio
-from Bio import motifs
-from Bio import SeqIO
+from Bio import motifs, SeqIO
 
 from scipy.stats import ttest_1samp, wilcoxon
 
 
-def load_motifs(motif_dir, pseudocounts=0.01):
+def load_motifs(motif_dir, pseudocounts=0.05):
     '''
     read in motifs; motifs have to be in jaspar format as below:
     
@@ -34,12 +32,12 @@ def load_motifs(motif_dir, pseudocounts=0.01):
             avg_counts = counts.sum(axis=0).mean()
             m.pseudocounts = avg_counts*pseudocounts
             m.background = None
-            motif_dict[m.name] = m
+            motif_dict[m.name+'$'+m.matrix_id] = m
             
     return motif_dict
 
 
-def compute_scores(bio_motif, seq_dict, top_site):
+def compute_scores(bio_motif, seq_dict, top_site=1):
     '''
     compute motif scores across sequences and 
     output top scores to represent log-likelihood of being bound by transcription factor
@@ -74,12 +72,12 @@ def compute_scores(bio_motif, seq_dict, top_site):
         max_scores = max_scores*(max_scores > 0)
         scores.append(np.log2(np.sum(2**max_scores))) #additive log-likelihood
 #         scores.append(np.sum(max_scores))
-        pos.append(max_pos%len(fwd_scores))
+#         pos.append(max_pos%len(fwd_scores))
             
-    return bio_motif.name, scores, pos
+    return scores
 
 
-def test_one_motif(bio_motif, orig_seq_dict, mut_seq_dict, top_site):
+def test_one_motif(bio_motif, orig_seq_dict, mut_seq_dict, top_site=1):
     '''
     test for score differences of one motif
     positive and negative sequences are required to have aligned IDs
@@ -95,15 +93,20 @@ def test_one_motif(bio_motif, orig_seq_dict, mut_seq_dict, top_site):
     '''
     orig_score = compute_scores(bio_motif, orig_seq_dict, top_site)
     mut_score = compute_scores(bio_motif, mut_seq_dict, top_site)
-    score_diff = list(np.array(orig_score[1]) - np.array(mut_score[1]))
+    score_diff = list(np.array(orig_score) - np.array(mut_score))
     pv_ = []
     stat_ = []
     for k in range(1000):
         score_diff_sampled = np.random.choice(score_diff, replace=True, size=len(score_diff))
-        tmp_stat, tmp_pv = wilcoxon(score_diff_sampled)
-        pv_.append(-np.log10(tmp_pv)*np.sign(np.median(score_diff_sampled[score_diff_sampled!=0])))
+        nonzero_diff = score_diff_sampled[score_diff_sampled!=0]
+        if len(nonzero_diff) < 10:
+            tmp_stat = 0
+            tmp_pv = 1
+        else:
+            tmp_stat, tmp_pv = wilcoxon(score_diff_sampled)
+        pv_.append(-np.log10(tmp_pv)*np.sign(np.median(nonzero_diff)))
         stat_.append(tmp_stat)
-    return (bio_motif.name, stat_, pv_, score_diff)
+    return (bio_motif.name, bio_motif.matrix_id, stat_, pv_, score_diff)
 
 
 def test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=1, p=1, motif_list=None):
@@ -129,15 +132,15 @@ def test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=1, p=1, mo
     results = [r.get() for r in results]
     # format results to panda dataframe
     results_df = pd.DataFrame(results)
-    results_df.columns = ['motif', 'stats list', 'p-val list', 'score difference']
-    results_df = results_df.set_index('motif')
+    results_df.columns = ['motif', 'id', 'stats list', 'p-val list', 'score difference']
+    results_df = results_df.set_index('id')
     results_df['5% stats'] = [np.percentile(r, 5) for r in results_df['stats list']]
     results_df['Median stats'] = [np.percentile(r, 50) for r in results_df['stats list']]
     results_df['95% stats'] = [np.percentile(r, 95) for r in results_df['stats list']]
     results_df['5% p-val'] = [np.percentile(r, 5) for r in results_df['p-val list']]
     results_df['Median p-val'] = [np.percentile(r, 50) for r in results_df['p-val list']]
     results_df['95% p-val'] = [np.percentile(r, 95) for r in results_df['p-val list']]
-    results_df = results_df[['5% stats', 'Median stats', '95% stats', 
+    results_df = results_df[['motif', '5% stats', 'Median stats', '95% stats', 
                              '5% p-val', 'Median p-val', '95% p-val', 
                              'score difference', 'stats list', 'p-val list']]
     results_df = results_df.fillna(0)
@@ -192,8 +195,11 @@ def combine_similar_motifs(input_df, similarity_cutoff=0.6):
     
     merge_stats = pd.DataFrame()
     for s in merge_sets:
-        mean_set = input_df.loc[list(s)].iloc[:,:6].mean(axis=0)
-        mean_set.name = '|'.join(list(s))
+        merge_contain = np.array(list(s))
+        mean_set = input_df.loc[merge_contain].iloc[:,1:7].mean(axis=0)
+        # sort merged motifs by their absolute log p-values
+        merge_contain = merge_contain[np.argsort(np.abs(np.array(input_df.loc[merge_contain, 'Median p-val'])))[::-1]]
+        mean_set.name = '|'.join([input_df.loc[ss, 'motif']+'$'+ss for ss in merge_contain])
         merge_stats = pd.concat([merge_stats, mean_set], axis=1)
     merge_stats = merge_stats.T
 

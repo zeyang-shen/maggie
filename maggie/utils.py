@@ -50,16 +50,16 @@ def write_fasta(seq_dict, out_path):
     '''
     string = ""
     for seq in seq_dict:
-        string += ">" + seq + "\n"
-        string += seq_dict[seq] + "\n"
+        string += ">" + str(seq) + "\n"
+        string += str(seq_dict[seq]) + "\n"
     with open(out_path, 'w') as g:
         g.write(string)
     return
 
 
-def cat_fasta_files(orig_fasta_files, mut_fasta_files, output_name='./concat_files'):
+def cat_fasta_files(orig_fasta_files, mut_fasta_files):
     '''
-    Concatenate fasta files coming from multiple comparisons of genomes
+    Concatenate sequences coming from multiple fasta files
     
     Input:
         orig_fasta_files, mut_fasta_files required to be aligned in pairs
@@ -71,16 +71,12 @@ def cat_fasta_files(orig_fasta_files, mut_fasta_files, output_name='./concat_fil
     for i in range(len(orig_fasta_files)):
         # original files
         tmp_dict1 = read_fasta(orig_fasta_files[i])
-        tmp_dict1 = dict([(orig_fasta_files[i]+'|'+k, str(v)) for k, v in tmp_dict1.items()])
+        tmp_dict1 = dict([(orig_fasta_files[i]+'|'+k, v) for k, v in tmp_dict1.items()])
         orig_seq_dict.update(tmp_dict1)
         # mutated files
         tmp_dict2 = read_fasta(mut_fasta_files[i])
-        tmp_dict2 = dict([(mut_fasta_files[i]+'|'+k, str(v)) for k, v in tmp_dict2.items()])
+        tmp_dict2 = dict([(mut_fasta_files[i]+'|'+k, v) for k, v in tmp_dict2.items()])
         mut_seq_dict.update(tmp_dict2)
-    # write to files
-    write_fasta(orig_seq_dict, output_name+'_ref.fa')
-    print('Successfully concatenate files', orig_fasta_files, 'to:', output_name+'_ref.fa')
-    write_fasta(mut_seq_dict, output_name+'_mut.fa')
-    print('Successfully concatenate files', mut_fasta_files, 'to:', output_name+'_mut.fa')
+    return orig_seq_dict, mut_seq_dict
     
-# functions used in simulated data analysis
+### functions used in simulated data analysis

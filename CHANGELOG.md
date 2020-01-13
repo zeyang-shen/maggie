@@ -8,5 +8,5 @@
     Upload allele-specific CTCF, strain-specific PU.1, and QTLs datasets; \
     Update environment configuration; \
     Add progress bar.
-
-
+### v0.2.2 - 01/12/2020
+    Add information showing in the outputs, including numbers of motif mutation, summary and distribution of motif score differences

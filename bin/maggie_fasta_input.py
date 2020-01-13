@@ -42,7 +42,7 @@ if __name__ == "__main__":
                         default=1,
                         type=int)
     parser.add_argument("--save", 
-                        help="Flag indicating whether to save the original outputs for individual motifs. This file can be large, default = False",
+                        help="Flag indicating whether to save the motif score differences for individual motifs. This file can be large, default = False",
                         action='store_true')
     parser.add_argument("-p", "--processor", 
                         help="number of processors to run",
@@ -59,8 +59,8 @@ if __name__ == "__main__":
     top = args.T
     save = args.save
     if not save:
-        print('WARNING: will not save outputs for individual motifs!')
-        print('If you would like to save original outputs, please specify "--save"\n')
+        print('WARNING: will not save score differences for individual motifs!')
+        print('If you would like to save score differences, please specify "--save"\n')
     proc = args.processor
     
     # read in sequences
@@ -92,11 +92,13 @@ if __name__ == "__main__":
     output_dir = output_dir+'/maggie_output/'
     
     # Run Maggie pipeline
-    print('Running MAGGIE on %d motifs for %d sequences with %d parallel process\n  Estimate run time: %.1f minutes' % 
-          (len(motif_list), len(orig_seq_dict), proc, len(orig_seq_dict)*len(motif_list)/proc*3e-5)) # switch to a progress bar
+    print('Running MAGGIE on %d motifs for %d sequences with %d parallel process' % 
+          (len(motif_list), len(orig_seq_dict), proc))
     results = score.test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=top, p=proc, motif_list=motif_list)
     if save:
         results.to_csv(output_dir+'/maggie_output.tsv', sep='\t')
+    else:
+        results.iloc[:,:-1].to_csv(output_dir+'/maggie_output.tsv', sep='\t')
     
     # Combine similar motifs
     merge_stats = score.combine_similar_motifs(results, mCut)
@@ -105,6 +107,7 @@ if __name__ == "__main__":
     merge_stats.loc[sig_motifs].to_csv(output_dir+'/maggie_output_mergedSignificant.tsv', sep='\t')
     
     # Visualization files
+    visual.save_distribution(results, folder=output_dir)
     visual.save_logos(motif_dict, folder=output_dir)
     visual.generate_html(folder=output_dir)
     print('Results are ready!')

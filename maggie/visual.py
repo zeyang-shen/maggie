@@ -8,10 +8,8 @@ import seaborn as sns
 
 
 def save_logos(motif_dict, folder='.', input_file='maggie_output_mergedSignificant.tsv'):
-    try:
+    if not os.path.exists(folder+'/logos'):
         os.mkdir(folder+'/logos')
-    except:
-        pass
     
     read_df = pd.read_csv(folder+'/'+input_file, sep='\t', index_col=0)
     try:
@@ -42,7 +40,7 @@ def save_logos(motif_dict, folder='.', input_file='maggie_output_mergedSignifica
         plt.tight_layout()
         # set axes labels
     #     logo.ax.set_xlabel('Pos')
-        logo.ax.set_ylabel('PSSM')
+        logo.ax.set_ylabel('Bits')
         logo.ax.set_title(show_motif)
         logo.ax.set_xticks(np.arange(len(display_df)))
         logo.fig.savefig(folder+'/logos/'+str(k+1)+'.png', format='png')
@@ -50,15 +48,45 @@ def save_logos(motif_dict, folder='.', input_file='maggie_output_mergedSignifica
     print('Successfully saved motif logos')
 
 
+def save_distribution(data_df, folder='.', input_file='maggie_output_mergedSignificant.tsv'):
+    if not os.path.exists(folder+'/distributions'):
+        os.mkdir(folder+'/distributions')
+    
+    read_df = pd.read_csv(folder+'/'+input_file, sep='\t', index_col=0)
+    for k, i in enumerate(read_df.index.values):
+        mList = i.split('|')
+        show_motif = mList[0].split('$')[1] # plot for the top motif in the merged list
+        diffs = np.array(data_df.loc[show_motif, 'score difference'])
+        nonzero_diff = diffs[diffs!=0]
+        max_val = np.max(np.abs(nonzero_diff))
+        # plot distribution
+        sns.set(style='whitegrid', font_scale=1.5)
+        fig = plt.figure(figsize=(5,2))
+        if np.median(nonzero_diff) > 0:
+            color = 'salmon'
+        else:
+            color = 'lightskyblue'
+        sns.boxplot(nonzero_diff, color=color)
+        plt.xlim(-max_val, max_val)
+        plt.axvline(0, c='forestgreen', linestyle='--')
+        sns.despine(top=True, bottom=True, left=True)
+        plt.tight_layout()
+        # set axes labels
+        fig.savefig(folder+'/distributions/'+str(k+1)+'.png', format='png')
+        plt.close();
+    print('Successfully saved distribution plots')
+
+
 def generate_html(folder='.', input_file='maggie_output_mergedSignificant.tsv'):
     read_df = pd.read_csv(folder+'/'+input_file, sep='\t', index_col=0)
-    
+    tot_seq = int(read_df.index.name.split('Total sequences: ')[1][:-1])
     # universal designs
     header = '<head>\n<title>Maggie results</title>\n</head>'
-    basic_setup = '<body bgcolor="white" text="black">\n<table border="2" align="center" width="30%" height="40%" bordercolor="grey" cellspacing="5" cellpadding="30">'
-    caption = '<caption><font size="6", color="green"><b>Significant functional motifs</b></font></caption>'
+    basic_setup = '<body bgcolor="white" text="black">\n<table border="2" align="center" width="50%" height="20%" bordercolor="grey" cellspacing="5" cellpadding="20">'
+    basic_info = 'Total sequences = '+str(tot_seq)
+    caption = '<caption><font size="6", color="green"><b>Significant functional motifs</b></font><BR><font size="4", color="black">'+basic_info+'</font></caption>'
     label_color = '#1387FF'
-    table_label = '<tr>\n<th width="7%" height="12%"><font color="'+label_color+'">Rank</font></th>\n<th><font color="'+label_color+'">Motif(s)</font></th>\n<th><font color="'+label_color+'">PSSM logo</font></th>\n<th>\n<font color="'+label_color+'">Avg. signed -log10(p)</font><BR>\n<font color="'+label_color+'">[90% CI]</font>\n</th>\n</tr>'
+    table_label = '<tr>\n<th width="15%" height="4%"><font color="'+label_color+'">Rank</font></th>\n<th><font color="'+label_color+'">Motif(s)</font></th>\n<th><font color="'+label_color+'">Motif logo</font></th>\n<th>\n<font color="'+label_color+'">Signed -log10 p-value<BR>[90% CI]\n</th>\n<th><font color="'+label_color+'"># mutation (% total seq)</font></th>\n<th><font color="'+label_color+'"># pos mutation (% total mutation)</font></th>\n<th><font color="'+label_color+'"># neg mutation (% total mutation)</font></th>\n<th><font color="'+label_color+'">Median score difference</font></th>\n<th><font color="'+label_color+'">Mean score difference</font></th>\n<th><font color="'+label_color+'">Score difference distribution<BR><i>positive seq. - negative seq.</i></font></th>\n</tr>'
     ending = '</table>\n</body>\n</html>\n'
     with open(folder+'/mergedSignificant.html', 'w') as hf:
         hf.write('<html>\n')
@@ -66,10 +94,25 @@ def generate_html(folder='.', input_file='maggie_output_mergedSignificant.tsv'):
         
         # insert rows of significant motifs
         for k, m in enumerate(read_df.index.values):
+            # show motif logo
             img_tag = '<img src="logos/'+str(k+1)+'.png" width="350"/>'
-            pval = str(np.round(read_df.loc[m, 'Median p-val'],4))
-            ci = '['+str(np.round(read_df.loc[m, '5% p-val'],4))+','+str(np.round(read_df.loc[m, '95% p-val'],4))+']'
-            one_row = '<tr>\n<th>'+str(k+1)+'</th>\n<th>'+'|'.join([mm.split('$')[0] for mm in m.split('|')])+'</th>\n<th>'+img_tag+'</th>\n<th>\n'+pval+'<BR>\n'+ci+'\n</th>\n</tr>\n'
+            # show score difference distribution
+            img_distr = '<img src="distributions/'+str(k+1)+'.png" width="350"/>'
+            # show p-value
+            pval = str(read_df.loc[m, 'Median p-val'])
+            ci = '['+str(read_df.loc[m, '5% p-val'])+', '+str(read_df.loc[m, '95% p-val'])+']'
+            # show mutation info
+            num_mut = int(read_df.loc[m, 'All mutation'])
+            num_mut_block = str(num_mut)+' ('+str(np.around(num_mut/tot_seq*100, decimals=2))+'%)'
+            pos_mut = int(read_df.loc[m, 'Pos mutation'])
+            neg_mut = int(read_df.loc[m, 'Neg mutation'])
+            pos_mut_block = str(pos_mut)+' ('+str(np.around(pos_mut/num_mut*100, decimals=2))+'%)'
+            neg_mut_block = str(neg_mut)+' ('+str(np.around(neg_mut/num_mut*100, decimals=2))+'%)'
+            # show score difference info
+            median_diff = str(np.around(read_df.loc[m, 'Median score difference'], decimals=2))
+            mean_diff = str(np.around(read_df.loc[m, 'Mean score difference'], decimals=2))
+            # display a row
+            one_row = '<tr>\n<th>'+str(k+1)+'</th>\n<th>'+' | '.join([mm.split('$')[0] for mm in m.split('|')])+'</th>\n<th>'+img_tag+'</th>\n<th>\n'+pval+'<BR>\n'+ci+'\n</th>\n<th>'+num_mut_block+'</th>\n<th>'+pos_mut_block+'</th>\n<th>'+neg_mut_block+'</th>\n<th>'+median_diff+'</th>\n<th>'+mean_diff+'</th>\n<th>'+img_distr+'</th>\n</tr>\n'
             hf.write(one_row)
             
         # ending

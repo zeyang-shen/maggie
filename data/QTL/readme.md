@@ -12,5 +12,5 @@ The example command line to process these files is:
 python ./bin/maggie_fasta_input.py \
 ./data/QTL/DNase/dsQTL_high.fa \
 ./data/QTL/DNase/dsQTL_low.fa \
--o ./data/PU1/
+-o ./data/QTL/DNase/
 ```

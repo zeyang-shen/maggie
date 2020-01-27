@@ -84,7 +84,7 @@ def generate_html(folder='.', input_file='maggie_output_mergedSignificant.tsv'):
     header = '<head>\n<title>Maggie results</title>\n</head>'
     basic_setup = '<body bgcolor="white" text="black">\n<table border="2" align="center" width="50%" height="20%" bordercolor="grey" cellspacing="5" cellpadding="20">'
     basic_info = 'Total sequences = '+str(tot_seq)
-    caption = '<caption><font size="6", color="green"><b>Significant functional motifs</b></font><BR><font size="4", color="black">'+basic_info+'</font></caption>'
+    caption = '<caption><font size="6", color="green"><b>MAGGIE significant functional motifs</b></font><BR><font size="4", color="black">'+basic_info+'</font></caption>'
     label_color = '#1387FF'
     table_label = '<tr>\n<th width="15%" height="4%"><font color="'+label_color+'">Rank</font></th>\n<th><font color="'+label_color+'">Motif(s)</font></th>\n<th><font color="'+label_color+'">Motif logo</font></th>\n<th>\n<font color="'+label_color+'">Signed -log10 p-value<BR>[90% CI]\n</th>\n<th><font color="'+label_color+'"># mutation (% total seq)</font></th>\n<th><font color="'+label_color+'"># pos mutation (% total mutation)</font></th>\n<th><font color="'+label_color+'"># neg mutation (% total mutation)</font></th>\n<th><font color="'+label_color+'">Median score difference</font></th>\n<th><font color="'+label_color+'">Mean score difference</font></th>\n<th><font color="'+label_color+'">Score difference distribution<BR><i>positive seq. - negative seq.</i></font></th>\n</tr>'
     ending = '</table>\n</body>\n</html>\n'

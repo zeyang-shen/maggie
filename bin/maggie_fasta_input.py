@@ -70,6 +70,7 @@ if __name__ == "__main__":
         except:
             print('Failed to concatenate multiple fasta files.')
             sys.exit(1)
+        print('Successfully concetenated fasta files!')
     else:
         orig_seq_dict = utils.read_fasta(orig_file)
         mut_seq_dict = utils.read_fasta(mut_file)

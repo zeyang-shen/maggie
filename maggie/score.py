@@ -89,7 +89,7 @@ def test_one_motif(bio_motif, orig_seq_dict, mut_seq_dict, top_site=1):
         top_site: the number of top motif scores output for downstream analysis
     
     Outputs:
-        (motif name, statistic, p value, score differences)
+        (motif name, motif ID, statistic, p value, score differences)
     '''
     orig_score = compute_scores(bio_motif, orig_seq_dict, top_site)
     mut_score = compute_scores(bio_motif, mut_seq_dict, top_site)

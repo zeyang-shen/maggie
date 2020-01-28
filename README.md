@@ -5,7 +5,7 @@ The overview of the method is as below:
 
 
 <p align="center">
-<img src="https://github.com/zeyang-shen/maggie/blob/master/image/method.png" width="800" height="200">
+<img src="https://github.com/zeyang-shen/maggie/blob/master/image/method.png" width="800" height="250">
 </p>
 
 ## Environment setup and installation
@@ -18,9 +18,10 @@ After setting up a new environment, activate the environment:
 conda activate maggie
 ```
 
-Finally, copy the github folder and you are ready to run your own analysis:
+Finally, copy the github folder and you are ready to run your own analysis under the "maggie" folder:
 ```bash
 git clone https://github.com/zeyang-shen/maggie.git
+cd maggie
 ```
 
 ## Quick Usage
@@ -38,21 +39,20 @@ neg_seq_dict = utils.read_fasta(neg_seq_file)
 motif_dict = score.load_motifs('./data/JASPAR2020_CORE_vertebrates_motifs/')
 
 # test for one motif, and store p-values and score differences
-name, id, _, pvals, score_diffs = score.test_one_motif(motif_dict['CTCF$MA0139.1'], pos_seq_dict, neg_seq_dict)
+name, ID, _, pvals, score_diffs = score.test_one_motif(motif_dict['CTCF$MA0139.1'], pos_seq_dict, neg_seq_dict)
 
 # print results
-print('Signed -log10(p-value) for %s-%s is: %.2f' % (name, id, pvals[0]))
+print('Signed -log10(p-value) for %s-%s is: %.2f' % (name, ID, pvals[0]))
 ```
 
 ### Command lines
 All the command line tools are stored in the 'bin' directory. Below is an example of using MAGGIE with FASTA files as inputs:
 ```bash
-cd maggie
 python ./bin/maggie_fasta_input.py \
-./data/ASB/CTCF_binding_alleles.fa \ # positive sequences
-./data/ASB/CTCF_nonbinding_alleles.fa \ # negative sequences
--o ./data/ASB/ \ # output path; results will be stored in a folder named "maggie_output"
--p 1 # number of processors to use, default: 1
+./data/ASB/CTCF_binding_alleles.fa \ #positive sequences
+./data/ASB/CTCF_nonbinding_alleles.fa \ #negative sequences
+-o ./data/ASB/ \ #output path; results will be stored in a folder named "maggie_output"
+-p 1 #number of processors to use, default: 1
 ```
 
 ## Example outputs

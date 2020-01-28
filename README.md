@@ -3,9 +3,8 @@ MAGGIE provides a framework for identifying DNA sequence motifs mediating transc
 
 The overview of the method is as below:
 
-
 <p align="center">
-<img src="https://github.com/zeyang-shen/maggie/blob/master/image/method.png" width="800" height="250">
+<img src="https://github.com/zeyang-shen/maggie/blob/master/image/method.png" width="800" height="260">
 </p>
 
 ## Environment setup and installation

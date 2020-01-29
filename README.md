@@ -8,19 +8,18 @@ The overview of the method is as below:
 </p>
 
 ## Environment setup and installation
-Anaconda is required for environment setup and package installation (https://www.anaconda.com/download/#macos). After installing the anaconda, run the following commands to automatically create an environment named "maggie" with required dependencies so that your home environment will not be affected:
-```bash
-conda env create --file environment.yml
-```
-After setting up a new environment, activate the environment:
-```bash
-conda activate maggie
-```
-
-Finally, copy the github folder and you are ready to run your own analysis under the "maggie" folder:
+First, copy the github folder and go into the "maggie" folder:
 ```bash
 git clone https://github.com/zeyang-shen/maggie.git
 cd maggie
+```
+Next, configure an environment where MAGGIE can work. Anaconda is required for environment setup and package installation (https://www.anaconda.com/download/#macos). After installing the anaconda, run the following command to automatically create an environment named "maggie" with required dependencies:
+```bash
+conda env create --file environment.yml
+```
+After setting up a new environment, activate the environment and you are ready to run your own analysis under the "maggie" folder:
+```bash
+conda activate maggie
 ```
 
 ## Quick Usage

@@ -17,10 +17,11 @@ Next, configure an environment where MAGGIE can work. Anaconda is required for e
 ```bash
 conda env create --file environment.yml
 ```
-After setting up a new environment, activate the environment and you are ready to run your own analysis under the "maggie" folder:
+After setting up a new environment, activate the environment:
 ```bash
 conda activate maggie
 ```
+Now you are ready to run your own analysis under the "maggie" folder!
 
 ## Quick Usage
 ### Python package

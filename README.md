@@ -67,13 +67,13 @@ Column 2: motif names within the same cluster based on a high correlation among 
 
 Column 3: PWM logo for the motif with lowest p-value in the cluster; the rest motifs usually look quite similar
 
-Column 4: signed -log10(p-value) based on the original inputs and its 90% confidence interval after doing bootstrapping
+Column 4: signed -log10(p-value) and its 90% confidence interval based on bootstrapping
 
-Column 5: number of input sequences with mutations on the specific motif and its percentage in the total sequences
+Column 5: number of sequences with mutations on a specific motif and its percentage in the total sequences
 
-Column 6: number of input sequences with higher motif scores in the positive sequences and its percentage in the mutated sequences 
+Column 6: number of sequences with higher motif scores in the positive set and its fraction of Column 5 
 
-Column 7: number of input sequences with higher motif scores in the negative sequences and its percentage in the mutated sequences 
+Column 7: number of sequences with higher motif scores in the negative set and its fraction of Column 5 
 
 Column 8: the median value of all the non-zero motif score differences
 

@@ -10,3 +10,6 @@
     Add progress bar.
 ### v0.2.2 - 01/12/2020
     Add information showing in the outputs, including numbers of motif mutation, summary and distribution of motif score differences
+### v0.3.0 - 03/21/2020
+    Now allow VCF file as input besides FASTA files!
+    

@@ -4,16 +4,25 @@ import pandas as pd
 import Bio
 from Bio import motifs, SeqIO
 
-def read_fasta(fasta_file):
+def read_fasta(fasta_file, skip_duplicate=True):
     '''
     Read in sequences
     '''
     alphabet = Bio.Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA() # need to use this alphabet for motif score calculation
     id_seq_dict = {} # {sequenceID: fastq sequence}
+    duplicate_keys = []
     for seq_record in SeqIO.parse(fasta_file, "fasta"):  
         seq_record.seq.alphabet = alphabet
-        id_seq_dict[seq_record.id] = seq_record.seq
-        
+        if seq_record.id in id_seq_dict.keys():
+            duplicate_keys.append(seq_record.id)
+        else:
+            id_seq_dict[seq_record.id] = seq_record.seq
+    # delete duplicate keys
+    if skip_duplicate:
+        for dk in duplicate_keys:
+            del id_seq_dict[dk]
+        if len(duplicate_keys) > 0:
+            print('Ignore duplicate keys in %s: %s' % (fasta_file, duplicate_keys))
     return id_seq_dict
 
 

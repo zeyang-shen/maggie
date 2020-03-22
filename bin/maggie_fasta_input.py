@@ -16,7 +16,7 @@ if __name__ == "__main__":
                         help="file1,file2,file3,... fasta file(s) that contain positive sequences; multiple files should be separated by comma without space",
                         type=str)
     parser.add_argument("mutatedFile", 
-                        help="file1,file2,file3,... fasta file(s) that contain negative sequences that should be aligned with positive sequences as pairs",
+                        help="file1,file2,file3,... fasta file(s) that contain negative sequences that should have the same sequence identifiers as positive sequences to form pairs",
                         type=str)
     parser.add_argument("--motifPath",
                         help="path to the motif files",
@@ -26,8 +26,8 @@ if __name__ == "__main__":
                         help="spcify motifs to compute; multiple motifs should be separated by comma without space like 'SPI1,CEBPB'",
                         type=str)
     parser.add_argument("-o", "--output", 
-                        help="output directory",
-                        default='.',
+                        help="output directory; by default, will create a new folder under current path",
+                        default='./maggie_output/',
                         type=str)
     parser.add_argument("-mCut", 
                         help="cutoff for merging similar motifs; a float value ranging from 0 (merge everything) to 1 (no merging at all), default = 0.6",
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     parser.add_argument("--save", 
                         help="Flag indicating whether to save the motif score differences for individual motifs. This file can be large, default = False",
                         action='store_true')
-    parser.add_argument("-p", "--processor", 
+    parser.add_argument("-p", 
                         help="number of processors to run",
                         default=1,
                         type=int)
@@ -59,9 +59,8 @@ if __name__ == "__main__":
     top = args.T
     save = args.save
     if not save:
-        print('WARNING: will not save score differences for individual motifs!')
-        print('If you would like to save score differences, please specify "--save"\n')
-    proc = args.processor
+        print('"--save" flag off: will not save score differences for individual motifs')
+    proc = args.p
     
     # read in sequences
     if len(orig_file.split(',')) > 1:
@@ -76,7 +75,8 @@ if __name__ == "__main__":
         mut_seq_dict = utils.read_fasta(mut_file)
         
     if len(orig_seq_dict) != len(mut_seq_dict):
-        sys.exit('# positive sequences unequal to # negative sequences. Make sure your inputs come as pairs')
+        sys.exit('ERROR: unequal # sequences in input files! Make sure your inputs come as pairs')
+
     
     # Read in motif files
     motif_dict = score.load_motifs(motif_dir)
@@ -87,10 +87,12 @@ if __name__ == "__main__":
     
     # Create folder to store outputs
     try:
-        os.mkdir(output_dir+'/maggie_output/')
-    except:
+        os.mkdir(output_dir)
+    except FileExistsError:
         pass
-    output_dir = output_dir+'/maggie_output/'
+    except OSError:
+        print('Please check if your specified path exists!')
+        raise
     
     # Run Maggie pipeline
     print('Running MAGGIE on %d motifs for %d sequences with %d parallel process' % 
@@ -111,5 +113,5 @@ if __name__ == "__main__":
     visual.save_distribution(results, folder=output_dir)
     visual.save_logos(motif_dict, folder=output_dir)
     visual.generate_html(folder=output_dir)
-    print('Results are ready!')
+    print('Results are ready in %s' % (output_dir))
     

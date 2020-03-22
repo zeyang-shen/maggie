@@ -1,0 +1,4 @@
+Merged motif (Total sequences: 1733)	5% stats	Median stats	95% stats	5% p-val	Median p-val	95% p-val	All mutation	Pos mutation	Neg mutation	Median score difference	Mean score difference
+CTCF$MA0139.1	46309.4	54284.5	63099.8	3.23	6.21	10.23	537	298	239	0.291	0.497
+CTCFL$MA1102.1|CTCFL$MA1102.2	24529.9	30007.0	36102.65	2.36	5.06	8.93	436	251	185	0.178	0.51
+IRF1$MA0050.1|STAT1$MA0137.1|STAT1::STAT2$MA0517.1|IRF1$MA0050.2	17125.72	21315.88	25921.4	1.65	3.94	7.13	261	165	96	0.652	0.6

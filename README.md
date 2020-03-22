@@ -1,7 +1,7 @@
 # MAGGIE
 MAGGIE provides a framework for identifying DNA sequence motifs mediating transcription factor binding and function. By leveraging measurements and genetic variation information from different genotypes (human individuals, animal strains, or alleles), MAGGIE associates the mutation of DNA sequence motif with various types of epigenomic features, including but not limited to transcription factor binding, open chromatin, histone modification, and stimulus response of regulatory elements. 
 
-The overview of the method is as below:
+Here is the overview of the method:
 
 <p align="center">
 <img src="https://github.com/zeyang-shen/maggie/blob/master/image/method.png" width="900" height="280">

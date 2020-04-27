@@ -12,5 +12,15 @@ The example command line to process these files is:
 python ./bin/maggie_fasta_input.py \
 ./data/QTL/DNase/dsQTL_high.fa \
 ./data/QTL/DNase/dsQTL_low.fa \
--o ./data/QTL/DNase/
+-o ./data/QTL/DNase/maggie_output/
+```
+or
+```bash
+python ./bin/maggie_vcf_input.py \
+./data/QTL/DNase/dsQTL_info.tsv \
+hg18 \
+-e Estimate \
+-a1 ref \
+-a2 alt \
+-o ./data/QTL/DNase/maggie_output/
 ```

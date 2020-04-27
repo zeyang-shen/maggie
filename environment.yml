@@ -1,4 +1,4 @@
-name: maggie
+name: maggie_test2
 channels:
 - bioconda
 - conda-forge
@@ -14,3 +14,5 @@ dependencies:
 - pip=19.2.3
 - pip:
     - logomaker==0.7
+    - requests==2.23.0
+    - jupyter==1.0.0

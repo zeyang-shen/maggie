@@ -44,6 +44,9 @@ if __name__ == "__main__":
     parser.add_argument("--save", 
                         help="Flag indicating whether to save the motif score differences for individual motifs. This file can be large, default = False",
                         action='store_true')
+    parser.add_argument("--linear", 
+                        help="Flag for linear model, default = False",
+                        action='store_true')
     parser.add_argument("-p", 
                         help="number of processors to run",
                         default=1,
@@ -60,6 +63,9 @@ if __name__ == "__main__":
     save = args.save
     if not save:
         print('"--save" flag off: will not save score differences for individual motifs')
+    linear = args.linear
+    if linear:
+        print('Analyzing with linear model')
     proc = args.p
     
     # read in sequences
@@ -81,7 +87,12 @@ if __name__ == "__main__":
     # Read in motif files
     motif_dict = score.load_motifs(motif_dir)
     if args.motifs:
-        motif_list = [i for i in args.motifs.split(',')]
+        motif_list = []
+        for i in args.motifs.split(','):
+            for k in motif_dict.keys():
+                if k.split('$')[0].upper() == i.upper():
+                    motif_list.append(k)
+        motif_list = np.unique(motif_list)
     else:
         motif_list = list((motif_dict.keys()))
     
@@ -89,29 +100,33 @@ if __name__ == "__main__":
     try:
         os.mkdir(output_dir)
     except FileExistsError:
-        pass
+        sys.exit('ERROR: Specified folder exists! Please name a different folder to save results')
     except OSError:
-        print('Please check if your specified path exists!')
-        raise
+        sys.exit('ERROR: Please check if your specified path exists!')
     
     # Run Maggie pipeline
     print('Running MAGGIE on %d motifs for %d sequences with %d parallel process' % 
           (len(motif_list), len(orig_seq_dict), proc))
-    results = score.test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=top, p=proc, motif_list=motif_list)
-    if save:
-        results.to_csv(output_dir+'/maggie_output.tsv', sep='\t')
+    results = score.test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, 
+                                    top_site=top, p=proc, motif_list=motif_list, linear=linear)
+    
+    if not linear:
+        if save:
+            results.to_csv(output_dir+'/maggie_output.tsv', sep='\t')
+        else:
+            results.iloc[:,:-1].to_csv(output_dir+'/maggie_output.tsv', sep='\t')
+    
+        # Combine similar motifs
+        merge_stats = score.combine_similar_motifs(results, mCut)
+        merge_stats.to_csv(output_dir+'/maggie_output_merged.tsv', sep='\t')
+        sig_motifs = utils.FDR_cutoff(np.abs(merge_stats['Median p-val']), alpha=sCut)
+        merge_stats.loc[sig_motifs].to_csv(output_dir+'/maggie_output_mergedSignificant.tsv', sep='\t')
+
+        # Visualization files
+        visual.save_distribution(results, folder=output_dir)
+        visual.save_logos(motif_dict, folder=output_dir)
+        visual.generate_html(folder=output_dir)
     else:
-        results.iloc[:,:-1].to_csv(output_dir+'/maggie_output.tsv', sep='\t')
-    
-    # Combine similar motifs
-    merge_stats = score.combine_similar_motifs(results, mCut)
-    merge_stats.to_csv(output_dir+'/maggie_output_merged.tsv', sep='\t')
-    sig_motifs = utils.FDR_cutoff(np.abs(merge_stats['Median p-val']), alpha=sCut)
-    merge_stats.loc[sig_motifs].to_csv(output_dir+'/maggie_output_mergedSignificant.tsv', sep='\t')
-    
-    # Visualization files
-    visual.save_distribution(results, folder=output_dir)
-    visual.save_logos(motif_dict, folder=output_dir)
-    visual.generate_html(folder=output_dir)
+        results.to_csv(output_dir+'/maggie_output.tsv', sep='\t')
     print('Results are ready in %s' % (output_dir))
     

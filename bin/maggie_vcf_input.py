@@ -11,7 +11,7 @@ from Bio import Seq
 
 import os
 import argparse
-from subprocess import call
+import requests
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Maggie framework working with VCF file; Installation of HOMER is required!')
@@ -19,7 +19,7 @@ if __name__ == "__main__":
                         help="VCF file that contains testing variants",
                         type=str)
     parser.add_argument("genome", 
-                        help="reference genome for the positions of variants",
+                        help="reference genome",
                         type=str)
     parser.add_argument("-e", "--effect", 
                         help="name of the column in vcfFile for effect sizes that compare alternative vs. reference alleles. If not specified, assume a2 always associated with a higher signal than a1",
@@ -99,26 +99,52 @@ if __name__ == "__main__":
     if effect_col not in vcf_df.columns.values:
         sys.exit('ERROR: cannot find effect sizes! Please make sure you have the column name correct')
 
-    # get surrounding sequences - step 1: generate BED file
-    random_str = ''.join([str(np.random.randint(0,10)) for i in range(10)])
-    bed_df = pd.DataFrame()
-    bed_df['chr'] = ['chr'+str(ch) if 'chr' not in str(ch) else str(ch) for ch in vcf_df.iloc[:,0]]
+    # step 1: get surrounding sequences
+    if len(genome.split('.')) == 1: # download reference genome
+        genome_path = './data/genomes/'+genome+'.fa'
+        if not os.path.exists(genome_path):
+            print('Downloading reference genome', genome)
+            try:
+                url = 'http://homer.ucsd.edu/zeyang/maggie/genomes/'+genome+'.fa'
+                r = requests.get(url, stream=True)
+                r.raise_for_status()
+                total_size = int(r.headers.get('content-length', 0))
+                block_size = 1024
+                try:
+                    from tqdm import tqdm # load package to show the progress bar
+                    t=tqdm(total=total_size, unit='B', unit_scale=True)
+                    with open(genome_path, 'wb') as f:
+                        for data in r.iter_content(block_size):
+                                t.update(len(data))
+                                f.write(data)
+                        t.close()
+                except:
+                    with open(genome_path, 'wb') as f:
+                        f.write(r.content)
+            except:
+                print('ERROR: failed to download the specified genome')
+                raise
+    else:
+        genome_path = genome
+    
+    # read reference genome
+    try:
+        print('Reading reference genome:', os.path.abspath(genome_path))
+        genomes = utils.load_genome(genome_path)
+    except FileExistsError:
+        print('ERROR: please check if your specified genome path exists!')
+        raise
+    
+    pos_data = utils.data_prep(vcf_file, genomes, size=size, skiprows=skips+1, file_format='vcf')
+    chr_list = ['chr'+str(ch) if 'chr' not in str(ch) else str(ch) for ch in vcf_df.iloc[:,0]]
     mids = vcf_df.iloc[:,1]
-    bed_df['start'] = mids - size//2
-    bed_df['end'] = mids + size//2
-    bed_df['name'] = [c+'.'+str(mids[k]) for k,c in enumerate(bed_df['chr'])]
-    bed_file = '.tmp'+random_str+'.bed'
-    bed_df.to_csv('.tmp'+random_str+'.bed',sep='\t',index=False,header=False)
+    seq_keys = [c+'.'+str(mids[k]) for k,c in enumerate(chr_list)]
+    seq_dict = dict()
+    for i in range(len(pos_data)):
+        seq_dict[seq_keys[i]] = pos_data[i][0]
     
-    # get surrounding sequences - step 2: extract sequences
-    fasta_file = bed_file.replace('.bed', '.fa')
-    extract_command = 'homerTools extract '+bed_file+' '+genome+' -fa > '+fasta_file
-    call(extract_command, shell=True)
-    call('rm '+bed_file, shell=True)
-    
-    # get surrounding sequences - step 3: generate positive and negative sequences
-    seq_dict = utils.read_fasta(fasta_file)
-    vcf_df.index = bed_df['name']
+    # step 2: generate positive and negative sequences
+    vcf_df.index = seq_keys
     alphabet = Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA()
     high_seqs = []
     low_seqs = []
@@ -158,6 +184,7 @@ if __name__ == "__main__":
     orig_seq_dict = dict(seq_df['high_seq'])
     mut_seq_dict = dict(seq_df['low_seq'])
     
+    # step 3: run MAGGIE
     # Read in motif files
     motif_dict = score.load_motifs(motif_dir)
     if args.motifs:
@@ -171,10 +198,10 @@ if __name__ == "__main__":
     except FileExistsError:
         pass
     except OSError:
-        print('Please check if your specified path exists!')
+        print('Please check if your specified output path exists!')
         raise
     
-    # Run Maggie pipeline
+    # run pipeline
     print('Running MAGGIE on %d motifs for %d sequences with %d parallel process' % 
           (len(motif_list), len(orig_seq_dict), proc))
     results = score.test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=top, p=proc, motif_list=motif_list)

@@ -12,4 +12,5 @@
     Add information showing in the outputs, including numbers of motif mutation, summary and distribution of motif score differences
 ### v0.3.0 - 03/21/2020
     Now allow VCF file as input besides FASTA files!
-    
+### v0.3.1 - 04/26/2020
+    Update modules to extract sequences from reference genomes; add modules to generate simulated sequences

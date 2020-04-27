@@ -9,7 +9,7 @@ from Bio import motifs, SeqIO
 from scipy.stats import ttest_1samp, wilcoxon
 
 
-def load_motifs(motif_dir, pseudocounts=0.05):
+def load_motifs(motif_dir, pseudocounts=0.05, key='full'):
     '''
     read in motifs; motifs have to be in jaspar format as below:
     
@@ -22,6 +22,8 @@ def load_motifs(motif_dir, pseudocounts=0.05):
     Parameters:
         motif_dir: folder that contains motif files; one file for individual motif
         pseudocounts: w.r.t. position weight matrix, the probability adding to every nucleotide
+        key: specify the way to name the motifs in the output dictionary
+             options: 'full' (default), 'id'
     '''
     motif_dict = {}
     nuc = ['A', 'C', 'G', 'T']
@@ -32,7 +34,10 @@ def load_motifs(motif_dir, pseudocounts=0.05):
             avg_counts = counts.sum(axis=0).mean()
             m.pseudocounts = avg_counts*pseudocounts
             m.background = None
-            motif_dict[m.name+'$'+m.matrix_id] = m
+            if key == 'full':
+                motif_dict[m.name+'$'+m.matrix_id] = m
+            elif key == 'id':
+                motif_dict[m.matrix_id] = m
             
     return motif_dict
 
@@ -49,6 +54,12 @@ def compute_scores(bio_motif, seq_dict, top_site=1):
     
     Outputs:
         (motif name, motif scores, positions of scores on sequence)
+        
+    Example:
+        motif_dict = score.load_motifs('./data/JASPAR2020_CORE_vertebrates_motifs/')
+        alphabet = Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA()
+        random_seq = {1:Seq.Seq('ACGCTAAACAGGAACTT', alphabet=alphabet)}
+        spi1_scores = compute_scores(motif_dict['SPI1$MA0080.4'], random_seq, 1)
     '''
     fwd_pssm = bio_motif.pssm
     rev_pssm = fwd_pssm.reverse_complement()
@@ -58,20 +69,25 @@ def compute_scores(bio_motif, seq_dict, top_site=1):
     
     for sid in sorted_ids:
         seq = seq_dict[sid]
+        if len(seq) < len(bio_motif):
+            sys.exit('ERROR: sequence lengths are too short to calculate motif score!')
         fwd_scores = fwd_pssm.calculate(seq) # scores for forward orientation
         rev_scores = rev_pssm.calculate(seq) # scores for reverse orientation
+        if type(fwd_scores) == np.float32:
+            fwd_scores = [fwd_scores]
+        if type(rev_scores) == np.float32:
+            rev_scores = [rev_scores]
         
-        concat_scores = list(fwd_scores) + list(rev_scores)
-        if len(concat_scores) < 0:
-            max_scores = [0]
-            max_pos = [-1]
+        concat_scores = np.array(list(fwd_scores) + list(rev_scores))
+        if sum(np.isnan(concat_scores)) == len(concat_scores):
+            max_pos = np.array([-1])
+            max_scores = np.array([0])
         else:
+            concat_scores[np.isnan(concat_scores)] = -100
             max_pos = np.argsort(concat_scores)[::-1][:top_site]
             max_scores = np.array(concat_scores)[max_pos]
-        max_scores = np.nan_to_num(max_scores, 0)
         max_scores = max_scores*(max_scores > 0)
         scores.append(np.log2(np.sum(2**max_scores))) #additive log-likelihood
-#         scores.append(np.sum(max_scores))
 #         pos.append(max_pos%len(fwd_scores))
             
     return scores
@@ -119,7 +135,31 @@ def test_one_motif(bio_motif, orig_seq_dict, mut_seq_dict, top_site=1):
     return (bio_motif.name, bio_motif.matrix_id, stat_, pv_, list(score_diff))
 
 
-def test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=1, p=1, motif_list=None):
+def test_one_motif_linear(bio_motif, orig_seq_dict, mut_seq_dict, top_site=1):
+    '''
+    correlation test for score differences
+    
+    Parameters:
+        bio_motif: Bio motif object used to compute motif scores
+        orig_seq_dict: python dictionary containing positive sequences
+        mut_seq_dict: python dictionary containing negative sequences
+        top_site: the number of top motif scores output for downstream analysis
+    
+    Outputs:
+        (motif name, motif ID, correlation, p value)
+    '''
+    import statsmodels.formula.api as smf
+    orig_scores = np.array(compute_scores(bio_motif, orig_seq_dict, top_site))
+    mut_scores = np.array(compute_scores(bio_motif, mut_seq_dict, top_site))
+    data = pd.DataFrame({'score':list(orig_scores)+list(mut_scores), 
+                         'label':[1]*len(orig_scores)+[0]*len(orig_scores), 
+                         'group':list(np.arange(0,len(orig_scores)))+list(np.arange(0,len(orig_scores)))})
+    md = smf.mixedlm("score ~ label", data, groups=data['group'])
+    mdf = md.fit()
+    return (bio_motif.name, bio_motif.matrix_id, mdf.params['label'], -np.log10(mdf.pvalues.loc['label']))
+
+
+def test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=1, p=1, motif_list=None, linear=False):
     '''
     test for all motifs in the given dictionary
     positive and negative sequences are required to have aligned IDs
@@ -134,25 +174,39 @@ def test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=1, p=1, mo
     Outputs:
         A pandas dataframe including all the results
     '''
-    if not motif_list:
+    if motif_list is None:
         motif_list = np.sort(list(motif_dict.keys()))
     # parallel processing to compute motif score differences
     pool = mp.Pool(processes=p)
     try:
         from tqdm import tqdm # load package to show the progress bar
         pbar = tqdm(total=len(motif_list))
-        results = [pool.apply_async(test_one_motif, args=(motif_dict[m], orig_seq_dict, mut_seq_dict, top_site), 
-                                    callback=lambda _: pbar.update(1)) 
-                   for m in motif_list]
+        if linear:
+            results = [pool.apply_async(test_one_motif_linear, args=(motif_dict[m], orig_seq_dict, mut_seq_dict, top_site), 
+                                        callback=lambda _: pbar.update(1)) 
+                       for m in motif_list]
+        else:
+            results = [pool.apply_async(test_one_motif, args=(motif_dict[m], orig_seq_dict, mut_seq_dict, top_site), 
+                                        callback=lambda _: pbar.update(1)) 
+                       for m in motif_list]
     except:
         print('Missing package to show the progress')
-        results = [pool.apply_async(test_one_motif, args=(motif_dict[m], orig_seq_dict, mut_seq_dict, top_site)) 
-                   for m in motif_list]
+        if linear:
+            results = [pool.apply_async(test_one_motif_linear, args=(motif_dict[m], orig_seq_dict, mut_seq_dict, top_site)) 
+                       for m in motif_list]
+        else:
+            results = [pool.apply_async(test_one_motif, args=(motif_dict[m], orig_seq_dict, mut_seq_dict, top_site)) 
+                       for m in motif_list]
     results = [r.get() for r in results]
     pool.close()
     pool.join()
     # format results to panda dataframe
     results_df = pd.DataFrame(results)
+    if linear:
+        results_df.columns = ['motif', 'id', 'correlation', 'p-val']
+        results_df = results_df.set_index('id')
+        return results_df
+    
     results_df.columns = ['motif', 'id', 'stats list', 'p-val list', 'score difference']
     results_df = results_df.set_index('id')
     results_df['5% stats'] = [np.around(np.percentile(r, 5), decimals=1) for r in results_df['stats list']]

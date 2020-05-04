@@ -130,7 +130,10 @@ def data_prep(path, genomes, size=100, skiprows=0, file_format='bed'):
         mid = (start+end)//2
         start = mid - size//2
         end = mid + size//2
-        seq = genomes[chromID][start:end]
+        try:
+            seq = genomes[chromID][start:end]
+        except:
+            seq = 'N'*size
         data_point = (seq, chromID, start, end)
         data_list.append(data_point)
     return data_list

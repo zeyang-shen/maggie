@@ -11,11 +11,11 @@ import os
 import argparse
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Maggie framework working with FASTA files')
-    parser.add_argument("originalFile", 
+    parser = argparse.ArgumentParser(description='MAGGIE framework working with FASTA files')
+    parser.add_argument("posFile", 
                         help="file1,file2,file3,... fasta file(s) that contain positive sequences; multiple files should be separated by comma without space",
                         type=str)
-    parser.add_argument("mutatedFile", 
+    parser.add_argument("negFile", 
                         help="file1,file2,file3,... fasta file(s) that contain negative sequences that should have the same sequence identifiers as positive sequences to form pairs",
                         type=str)
     parser.add_argument("--motifPath",
@@ -32,17 +32,17 @@ if __name__ == "__main__":
     parser.add_argument("-mCut", 
                         help="cutoff for merging similar motifs; a float value ranging from 0 (merge everything) to 1 (no merging at all), default = 0.6",
                         default=0.6,
-                        type=int)
+                        type=float)
     parser.add_argument("-sCut", 
                         help="cutoff for calling significance based on FDR values, default = 0.05",
                         default=0.05,
-                        type=int)
+                        type=float)
     parser.add_argument("-T", 
                         help="number of top motif scores to be used to compute for representative motif score, default = 1",
                         default=1,
                         type=int)
-    parser.add_argument("--save", 
-                        help="Flag indicating whether to save the motif score differences for individual motifs. This file can be large, default = False",
+    parser.add_argument("--saveDiff", 
+                        help="Flag for saving motif score differences. This file can be large, default = False",
                         action='store_true')
     parser.add_argument("--linear", 
                         help="Flag for linear model, default = False",
@@ -53,16 +53,14 @@ if __name__ == "__main__":
                         type=int)
     args = parser.parse_args()
     
-    orig_file = args.originalFile
-    mut_file = args.mutatedFile
+    orig_file = args.posFile
+    mut_file = args.negFile
     motif_dir = args.motifPath
     output_dir = args.output
     mCut = args.mCut
     sCut = args.sCut
     top = args.T
-    save = args.save
-    if not save:
-        print('"--save" flag off: will not save score differences for individual motifs')
+    save = args.saveDiff
     linear = args.linear
     if linear:
         print('Analyzing with linear model')

@@ -4,7 +4,7 @@ import multiprocessing as mp
 import numpy as np
 import pandas as pd
 
-from Bio import motifs, SeqIO
+from Bio import motifs, SeqIO, Seq
 
 from scipy.stats import ttest_1samp, wilcoxon
 
@@ -65,10 +65,12 @@ def compute_scores(bio_motif, seq_dict, top_site=1):
     rev_pssm = fwd_pssm.reverse_complement()
     scores = []
     pos = []
+    alphabet = Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA()
     sorted_ids = sorted(seq_dict.keys())
     
     for sid in sorted_ids:
         seq = seq_dict[sid]
+        seq = Seq.Seq(str(seq), alphabet=alphabet)
         if len(seq) < len(bio_motif):
             sys.exit('ERROR: sequence lengths are too short to calculate motif score!')
         fwd_scores = fwd_pssm.calculate(seq) # scores for forward orientation

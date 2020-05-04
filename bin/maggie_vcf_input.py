@@ -14,7 +14,7 @@ import argparse
 import requests
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Maggie framework working with VCF file; Installation of HOMER is required!')
+    parser = argparse.ArgumentParser(description='MAGGIE framework working with VCF files')
     parser.add_argument("vcfFile", 
                         help="VCF file that contains testing variants",
                         type=str)
@@ -22,26 +22,29 @@ if __name__ == "__main__":
                         help="reference genome",
                         type=str)
     parser.add_argument("-e", "--effect", 
-                        help="name of the column in vcfFile for effect sizes that compare alternative vs. reference alleles. If not specified, assume a2 always associated with a higher signal than a1",
-                        type=str)
+                        help="the column index in the input file for effect size that compares alternative vs. reference alleles. If not specified, assume alternative alleles are always associated with a higher signal",
+                        type=int)
     parser.add_argument("-a1",
-                        help="name of the column in vcfFile for testing reference alleles, default = 'REF'",
-                        default="REF",
-                        type=str)
+                        help="columns name for reference alleles. If not specified, use the 4th column",
+                        default=4,
+                        type=int)
     parser.add_argument("-a2",
-                        help="name of the column in vcfFile for testing alternative alleles, default = 'ALT'",
-                        default="ALT",
-                        type=str)
+                        help="columns name for alternative alleles. If not specified, use the 5th column",
+                        default=5,
+                        type=int)
+    parser.add_argument("--saveSeq",
+                        help="Flag for saving intermediate sequences, default = False. Will generate two files that correspond to alleles associated higher and lower signals",
+                        action='store_true')
     parser.add_argument("-S", "--size",
                         help="size of sequences to test around variants, default = 100",
                         default=100,
                         type=int)
     parser.add_argument("--motifPath",
-                        help="path to the motif files",
+                        help="path to the motif files in JASPAR format",
                         default="./data/JASPAR2020_CORE_vertebrates_motifs/",
                         type=str)
     parser.add_argument("-m", "--motifs", 
-                        help="spcify motifs to compute; multiple motifs should be separated by comma without space like 'SPI1,CEBPB'",
+                        help="spcify motifs to compute; multiple motifs should be separated by comma without space in between (e.g., -m SPI1,CEBPB)",
                         type=str)
     parser.add_argument("-o", "--output", 
                         help="output directory; by default, will create a new folder under current path",
@@ -50,17 +53,17 @@ if __name__ == "__main__":
     parser.add_argument("-mCut", 
                         help="cutoff for merging similar motifs; a float value ranging from 0 (merge everything) to 1 (no merging at all), default = 0.6",
                         default=0.6,
-                        type=int)
+                        type=float)
     parser.add_argument("-sCut", 
                         help="cutoff for calling significance based on FDR values, default = 0.05",
                         default=0.05,
-                        type=int)
+                        type=float)
     parser.add_argument("-T", 
                         help="number of top motif scores to be used to compute for representative motif score, default = 1",
                         default=1,
                         type=int)
-    parser.add_argument("--save", 
-                        help="Flag indicating whether to save the motif score differences for individual motifs. This file can be large, default = False",
+    parser.add_argument("--saveDiff", 
+                        help="Flag for saving motif score differences. This file can be large, default = False",
                         action='store_true')
     parser.add_argument("-p", 
                         help="number of processors to run",
@@ -70,19 +73,26 @@ if __name__ == "__main__":
     
     vcf_file = args.vcfFile
     genome = args.genome
-    ref_col = args.a1.upper()
-    alt_col = args.a2.upper()
-    effect_col = args.effect.upper()
+    effect_col = args.effect
+    ref_col = args.a1
+    alt_col = args.a2
+    saveSeq = args.saveSeq
     size = args.size
     motif_dir = args.motifPath
     output_dir = args.output
     mCut = args.mCut
     sCut = args.sCut
     top = args.T
-    save = args.save
-    if not save:
-        print('"--save" flag off: will not save score differences for individual motifs')
+    save = args.saveDiff
     proc = args.p
+    
+    # Create folder to store outputs
+    try:
+        os.mkdir(output_dir)
+    except FileExistsError:
+        sys.exit('ERROR: Specified folder exists! Please name a different folder to save results')
+    except OSError:
+        sys.exit('ERROR: Please check if your specified path exists!')
     
     # read in VCF file
     with open(vcf_file, 'r') as rf:
@@ -93,12 +103,9 @@ if __name__ == "__main__":
             else:
                 break
     vcf_df = pd.read_csv(vcf_file, sep='\t', skiprows=skips)
-    vcf_df.columns = [str(col).upper() for col in vcf_df.columns.values]
-    if ref_col not in vcf_df.columns.values or alt_col not in vcf_df.columns.values:
-        sys.exit('ERROR: reference and/or alternative alleles are not defined!')
-    if effect_col not in vcf_df.columns.values:
-        sys.exit('ERROR: cannot find effect sizes! Please make sure you have the column name correct')
-
+    if effect_col is None:
+        sys.exit('ERROR: did not specify the column for effect sizes!')
+    
     # step 1: get surrounding sequences
     if len(genome.split('.')) == 1: # download reference genome
         genome_path = './data/genomes/'+genome+'.fa'
@@ -150,8 +157,8 @@ if __name__ == "__main__":
     low_seqs = []
     indices = []
     for snp in seq_dict.keys():
-        ref_allele = vcf_df.loc[snp][ref_col].upper()
-        alt_allele = vcf_df.loc[snp][alt_col].upper()
+        ref_allele = vcf_df.loc[snp][ref_col-1].upper()
+        alt_allele = vcf_df.loc[snp][alt_col-1].upper()
         if str(ref_allele) == 'nan':
             print('Skipping:', snp)
             continue
@@ -170,9 +177,9 @@ if __name__ == "__main__":
         indices.append(snp)
         ref = Seq.Seq(ref, alphabet=alphabet)
         alt = Seq.Seq(alt, alphabet=alphabet)
-        t_val = vcf_df.loc[snp][effect_col]
+        beta = vcf_df.loc[snp][effect_col-1]
         # save high vs. low allele
-        if t_val > 0:
+        if beta > 0:
             high_seqs.append(alt)
             low_seqs.append(ref)
         else:
@@ -183,24 +190,24 @@ if __name__ == "__main__":
     seq_df['low_seq'] = low_seqs
     orig_seq_dict = dict(seq_df['high_seq'])
     mut_seq_dict = dict(seq_df['low_seq'])
+    if saveSeq:
+        utils.write_fasta(orig_seq_dict, output_dir+'/positiveSeqs.fa')
+        utils.write_fasta(mut_seq_dict, output_dir+'/negativeSeqs.fa')
+        print('Successfully saved sequences of testing')
     
     # step 3: run MAGGIE
     # Read in motif files
     motif_dict = score.load_motifs(motif_dir)
     if args.motifs:
-        motif_list = [i for i in args.motifs.split(',')]
+        motif_list = []
+        for i in args.motifs.split(','):
+            for k in motif_dict.keys():
+                if k.split('$')[0].upper() == i.upper():
+                    motif_list.append(k)
+        motif_list = np.unique(motif_list)
     else:
         motif_list = list((motif_dict.keys()))
-    
-    # Create folder to store outputs
-    try:
-        os.mkdir(output_dir)
-    except FileExistsError:
-        pass
-    except OSError:
-        print('Please check if your specified output path exists!')
-        raise
-    
+
     # run pipeline
     print('Running MAGGIE on %d motifs for %d sequences with %d parallel process' % 
           (len(motif_list), len(orig_seq_dict), proc))

@@ -2,8 +2,7 @@
 import numpy as np
 import pandas as pd
 
-import Bio
-from Bio import motifs, SeqIO
+from Bio import Seq
 
 
 def generate_motif(motif_name, motif_dict):
@@ -83,7 +82,7 @@ def simulate_sequence_pairs(length, number, motif_dict, insert_motif_list, mutat
                     mut_seq[k] = np.random.choice(list(set(['A', 'C', 'G', 'T'])-set([mut_seq[k]])))
             else: #replace with another random motif sequence
                 motif_seq = generate_motif(insert_motif_list[o], motif_dict)
-                mut_seq[insert_pos:insert_pos+len(motif_seq)] = list(motif_seq)
+                mut_seq[insert_pos_list[o]:insert_pos_list[o]+len(motif_seq)] = list(motif_seq)
         seq_list.append((''.join(seq), ''.join(mut_seq)))
         
     return seq_list

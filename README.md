@@ -7,7 +7,7 @@ Here is the overview of the method:
 <img src="https://github.com/zeyang-shen/maggie/blob/master/image/method.png" width="900" height="280">
 </p>
 
-## Environment setup and installation
+## Installing MAGGIE
 First, copy the github folder and go into the "maggie" folder:
 ```bash
 git clone https://github.com/zeyang-shen/maggie.git
@@ -24,6 +24,16 @@ conda activate maggie
 Now you are ready to run your own analysis under the "maggie" folder!
 
 ## Quick Usage
+### Command lines
+All the command line tools are stored in the 'bin' directory. Below is an example of using MAGGIE with FASTA files as inputs:
+```bash
+python ./bin/maggie_fasta_input.py \
+./data/ASB/CTCF_binding_alleles.fa \
+./data/ASB/CTCF_nonbinding_alleles.fa \
+-o ./data/ASB/maggie_output/ \
+-p 1
+```
+
 ### Python package
 ```python
 from maggie import score, utils
@@ -44,16 +54,6 @@ name, ID, _, pvals, score_diffs = score.test_one_motif(motif_dict['CTCF$MA0139.1
 print('Signed -log10(p-value) for %s-%s is: %.2f' % (name, ID, pvals[0]))
 ```
 
-### Command lines
-All the command line tools are stored in the 'bin' directory. Below is an example of using MAGGIE with FASTA files as inputs:
-```bash
-python ./bin/maggie_fasta_input.py \
-./data/ASB/CTCF_binding_alleles.fa \ #positive sequences
-./data/ASB/CTCF_nonbinding_alleles.fa \ #negative sequences
--o ./data/ASB/ \ #output path; results will be stored in a folder named "maggie_output"
--p 1 #number of processors to use, default: 1
-```
-
 ## Example outputs
 An example of significant hits displayed in the HTML format for CTCF allele-specific binding sites looks like this:
 
@@ -61,25 +61,25 @@ An example of significant hits displayed in the HTML format for CTCF allele-spec
 <img src="https://github.com/zeyang-shen/maggie/blob/master/image/html_example.png" width="900" height="200">
 </p>
 
-Column 1: ranking of significant hits based on absolute value of -log10(p-value)
+Column 1: ranking based on absolute value of -log10(p-value)
 
-Column 2: motif names within the same cluster based on a high correlation among changes of their motif scores
+Column 2: merged motifs based on a high correlation among changes of their motif scores
 
-Column 3: PWM logo for the motif with lowest p-value in the cluster; the rest motifs usually look quite similar
+Column 3: PWM logo for the motif with lowest p-value
 
-Column 4: signed -log10(p-value) and its 90% confidence interval based on bootstrapping
+Column 4: signed -log10(p-value) and 90% confidence interval
 
-Column 5: number of sequences with mutations on a specific motif and its percentage in the total sequences
+Column 5: # and percentage of sequences with motif mutations
 
-Column 6: number of sequences with higher motif scores in the positive set and its fraction of Column 5 
+Column 6: # sequences with higher motif scores in the positive set and its fraction of Column 5 
 
-Column 7: number of sequences with higher motif scores in the negative set and its fraction of Column 5 
+Column 7: # sequences with higher motif scores in the negative set and its fraction of Column 5 
 
-Column 8: the median value of all the non-zero motif score differences
+Column 8: median value of non-zero motif score differences
 
-Column 9: the mean value of all the non-zero motif score differences
+Column 9: mean value of non-zero motif score differences
 
-Column 10: the distribution of all the non-zero motif score differences
+Column 10: distribution of non-zero motif score differences
 
 
 ## Contact

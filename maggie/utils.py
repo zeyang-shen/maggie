@@ -137,3 +137,154 @@ def data_prep(path, genomes, size=100, skiprows=0, file_format='bed'):
         data_point = (seq, chromID, start, end)
         data_list.append(data_point)
     return data_list
+
+
+def save_raw_data(results_df, output_path):
+    '''
+    Save score differences
+    '''
+    save_np = np.array([s for s in results_df['score difference']])
+    np.save(output_path, save_np)
+    print('Successfully saved score differences')
+
+
+def annotateBED(gff_file, bed_df, overlap=None):
+    '''
+    Annotate regions in BED file based on GFF file
+    '''
+    # Read GFF file
+    print('Reading annotation file')
+    gencode = pd.read_table(gff_file, comment='#', sep='\t', 
+                            names=['seqname', 'source', 'feature', 'start' , 'end', 
+                                   'score', 'strand', 'frame', 'attribute'])
+    
+    combine_df = pd.DataFrame()
+    for chrom in np.unique(bed_df.iloc[:,0]): # process chromosome-by-chromosome
+        # obtain input regions
+        chr_region = bed_df.loc[bed_df['Chr']==chrom].sort_values(by='Start')
+        # obtain all annotations
+        chr_gencode = gencode.loc[gencode['seqname']==chrom]
+        if len(chr_gencode) == 0:
+            continue
+        # obtain transcripts
+        chr_transcripts = chr_gencode.loc[chr_gencode['feature'] == 'transcript']
+        chr_transcripts.is_copy = None
+        chr_transcripts['ID'] = chr_transcripts.index.values
+        chr_transcripts.index = [a.split('gene_name=')[1].split(';')[0] for a in chr_transcripts['attribute']]
+        chr_transcripts = chr_transcripts.sort_values(by='start')
+        chr_genes = chr_transcripts.loc[~chr_transcripts.index.duplicated(keep='first')]
+        # filter genes
+        gene_filter = []
+        for g in chr_genes.index.values:
+            a = chr_genes.loc[g, 'attribute']
+            gene_type = a.split('gene_type=')[1].split(';')[0]
+            if gene_type == 'protein_coding':
+                gene_filter.append(g)
+        chr_genes = chr_genes.loc[gene_filter]
+        chr_transcripts = chr_transcripts.loc[gene_filter]
+        print(chrom, len(chr_region), len(chr_gencode), len(chr_genes))
+        
+        # process region-by-region
+        annots = []
+        for row in chr_region.iterrows():
+            bed_start, bed_end = row[1][1:3]
+            snp_len = bed_end - bed_start
+            snp_loc = (bed_start + bed_end)//2
+            if overlap is None:
+                overlap = snp_len//2
+
+            # Get annotations for the nearest gene(s)
+            near_ts_list = np.where(np.array(bed_end >= chr_transcripts['start']))[0]
+            if len(near_ts_list) > 0:
+                near_ts_idx = near_ts_list[-1]
+                near_ts = chr_transcripts.iloc[near_ts_idx]
+            else:
+                near_ts_idx = 0
+                near_ts = chr_transcripts.iloc[near_ts_idx]
+            near_gene_idx = np.where(chr_genes.index==near_ts.name)[0][0]
+
+            # Get annotations for the most confident transcript
+            all_rela_ts = chr_transcripts.loc[[near_ts.name]]
+            tsl = np.array([int(a.split('transcript_support_level=')[1].split(';')[0].replace('NA', '6')) 
+                            if 'transcript_support_level' in a else 6 for a in all_rela_ts['attribute']])
+            if min(tsl) <= 2:
+                keep_ts_idx = np.where(tsl <= 2)[0]
+            else:
+                keep_ts_idx = np.argsort(tsl)[[0]]
+            gene_comp = pd.DataFrame()
+            for ti in keep_ts_idx:
+                tmp_comp = chr_gencode.loc[all_rela_ts.iloc[ti]['ID']:]
+                next_gene = np.where(np.any([tmp_comp['feature'][1:] == 'gene', 
+                                             tmp_comp['feature'][1:] == 'transcript'], axis=0))[0]
+                if len(next_gene) > 0:
+                    tmp_comp = tmp_comp.iloc[:next_gene[0]]
+                gene_comp = pd.concat([gene_comp, tmp_comp])
+
+            # compute nearest gene and distance to TSS
+            if near_gene_idx < len(chr_genes)-1:
+                near_gene2 = chr_genes.index[near_gene_idx+1]
+                near_gene2_all_ts = chr_transcripts.loc[[near_gene2]]
+                tsl2 = np.array([int(a.split('transcript_support_level=')[1].split(';')[0].replace('NA', '6')) 
+                                if 'transcript_support_level' in a else 6 for a in near_gene2_all_ts['attribute']])
+                if min(tsl) <= 2:
+                    keep_ts_idx2 = np.where(tsl2 <= 2)[0]
+                else:
+                    keep_ts_idx2 = np.argsort(tsl2)[[0]]
+                near_gene2_ts = near_gene2_all_ts.iloc[keep_ts_idx2]
+            all_near_ts = pd.concat([all_rela_ts.iloc[keep_ts_idx], near_gene2_all_ts.iloc[keep_ts_idx2]])
+            all_dist_tss = []
+            for ts in all_near_ts.iterrows():
+                if ts[1]['strand'] == '+':
+                    dist_tss = snp_loc - ts[1]['start']
+                else:
+                    dist_tss = snp_loc - ts[1]['end']
+                all_dist_tss.append(dist_tss)
+            nearest_idx = np.argsort(np.absolute(all_dist_tss))[0]
+            dist_tss = all_dist_tss[nearest_idx]
+            near_gene_name = all_near_ts.index[nearest_idx]
+
+            # Assgin annotation
+            # inside the transcript region
+            if bed_start <= near_ts['end']-overlap:
+                # 5 prime UTR
+                gene_5UTR = gene_comp.loc[gene_comp['feature'] == 'five_prime_UTR']
+                near_5UTR_idx = np.where(np.array(bed_end >= gene_5UTR['start']))[0]
+                if len(near_5UTR_idx) > 0:
+                    near_5UTR = gene_5UTR.iloc[near_5UTR_idx[-1]]
+                    if bed_start <= near_5UTR['end']-overlap:
+                        annots.append(('5\'UTR', dist_tss, near_ts.name, near_ts['strand']))
+                        continue
+                # 3 prime UTR
+                gene_3UTR = gene_comp.loc[gene_comp['feature'] == 'three_prime_UTR']
+                near_3UTR_idx = np.where(np.array(bed_end >= gene_3UTR['start']))[0]
+                if len(near_3UTR_idx) > 0:
+                    near_3UTR = gene_3UTR.iloc[near_3UTR_idx[-1]]
+                    if bed_start <= near_3UTR['end']-overlap:
+                        annots.append(('3\'UTR', dist_tss, near_ts.name, near_ts['strand']))
+                        continue
+                # coding region
+                gene_exon = gene_comp.loc[gene_comp['feature'] == 'exon']
+                near_exon_idx = np.where(np.array(bed_end >= gene_exon['start']))[0]
+                if len(near_exon_idx) > 0:
+                    near_exon = gene_exon.iloc[near_exon_idx[-1]]
+                    if bed_start <= near_exon['end']-overlap:
+                        annots.append(('exon', dist_tss, near_ts.name, near_ts['strand']))
+                        continue   
+                # if none of above, labeled as intron
+                annots.append(('intron', dist_tss, near_ts.name, near_ts['strand']))
+
+            # outside the transcript region but close to TSS
+            elif np.abs(dist_tss) <= 1000:
+                annots.append(('TSS', dist_tss, near_gene_name, near_ts['strand']))
+            # outside the transcript region
+            else:
+                annots.append(('Intergenic', dist_tss, near_gene_name, near_ts['strand']))
+
+        # Aggregate annotations
+        annots = np.array(annots)
+        annots_df = pd.DataFrame(annots, index=chr_region.index)
+        annots_df.columns = ['Annotation', 'Distance to TSS', 'Nearest gene', 'Gene strand']
+        combine_df = pd.concat([combine_df, pd.concat([chr_region, annots_df], axis=1)], axis=0)    
+    return combine_df
+
+

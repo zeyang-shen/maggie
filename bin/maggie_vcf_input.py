@@ -87,12 +87,24 @@ if __name__ == "__main__":
     proc = args.p
     
     # Create folder to store outputs
-    try:
-        os.mkdir(output_dir)
-    except FileExistsError:
-        sys.exit('ERROR: Specified folder exists! Please name a different folder to save results')
-    except OSError:
-        sys.exit('ERROR: Please check if your specified path exists!')
+    if os.path.exists(output_dir):
+        valid = {"yes": True, "y": True, "ye": True, "no": False, "n": False}
+        prompt = " [y/n] "
+        while True:
+            sys.stdout.write('WARNING: '+output_dir+' already exists! Are you sure to replace the current file?' + prompt)
+            choice = input().lower()
+            if choice in valid:
+                if valid[choice]:
+                    break
+                else:
+                    sys.exit('Terminated')
+            else:
+                sys.stdout.write("Please respond with 'yes' (or 'y') or 'no' (or 'n').\n")
+    else:
+        try:
+            os.mkdir(output_dir)
+        except OSError:
+            sys.exit('ERROR: Please check if your specified path exists!')
     
     # read in VCF file
     with open(vcf_file, 'r') as rf:
@@ -212,11 +224,9 @@ if __name__ == "__main__":
     print('Running MAGGIE on %d motifs for %d sequences with %d parallel process' % 
           (len(motif_list), len(orig_seq_dict), proc))
     results = score.test_all_motifs(motif_dict, orig_seq_dict, mut_seq_dict, top_site=top, p=proc, motif_list=motif_list)
+    results.iloc[:,:-1].to_csv(output_dir+'/maggie_output.tsv', sep='\t')
     if save:
-        results.to_csv(output_dir+'/maggie_output.tsv', sep='\t')
-    else:
-        results.iloc[:,:-1].to_csv(output_dir+'/maggie_output.tsv', sep='\t')
-    
+        utils.save_raw_data(results, output_dir+'/score_differences.npy')
     # Combine similar motifs
     merge_stats = score.combine_similar_motifs(results, mCut)
     merge_stats.to_csv(output_dir+'/maggie_output_merged.tsv', sep='\t')

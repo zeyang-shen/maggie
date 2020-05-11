@@ -109,11 +109,9 @@ if __name__ == "__main__":
                                     top_site=top, p=proc, motif_list=motif_list, linear=linear)
     
     if not linear:
+        results.iloc[:,:-1].to_csv(output_dir+'/maggie_output.tsv', sep='\t')
         if save:
-            results.to_csv(output_dir+'/maggie_output.tsv', sep='\t')
-        else:
-            results.iloc[:,:-1].to_csv(output_dir+'/maggie_output.tsv', sep='\t')
-    
+            utils.save_raw_data(results, output_dir+'/score_differences.npy')
         # Combine similar motifs
         merge_stats = score.combine_similar_motifs(results, mCut)
         merge_stats.to_csv(output_dir+'/maggie_output_merged.tsv', sep='\t')

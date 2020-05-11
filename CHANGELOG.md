@@ -1,3 +1,5 @@
+### v0.3.3 - 05/10/2020
+    Add function to split the input variants given in VCF file based on genomic annotations in GFF file
 ### v0.3.2 - 05/03/2020
     Fix bugs for VCF input; add a script to generate and conduct analysis on simulated sequences; upload histone QTL files
 ### v0.3.1 - 04/26/2020

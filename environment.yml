@@ -1,4 +1,4 @@
-name: maggie_test2
+name: maggie
 channels:
 - bioconda
 - conda-forge

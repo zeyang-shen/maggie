@@ -51,6 +51,9 @@ if __name__ == "__main__":
                         help="number of processors to run",
                         default=1,
                         type=int)
+    parser.add_argument("-R", 
+                        help="Flag to overwrite the output folder if it already exists",
+                        action='store_true')
     args = parser.parse_args()
     
     orig_file = args.posFile
@@ -65,6 +68,7 @@ if __name__ == "__main__":
     if linear:
         print('Analyzing with linear model')
     proc = args.p
+    overwrite_flag = args.R
     
     # read in sequences
     if len(orig_file.split(',')) > 1:
@@ -98,7 +102,11 @@ if __name__ == "__main__":
     try:
         os.mkdir(output_dir)
     except FileExistsError:
-        sys.exit('ERROR: Specified folder exists! Please name a different folder to save results')
+        if overwrite_flag:
+            print('ATTENTION: Will overwrite the existing folder! Exit now to avoid overwrite')
+            pass
+        else:
+            sys.exit('ERROR: Specified folder exists! Please name a different folder to save results, or specify -R to overwrite')
     except OSError:
         sys.exit('ERROR: Please check if your specified path exists!')
     

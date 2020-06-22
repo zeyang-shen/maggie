@@ -24,42 +24,23 @@ conda activate maggie
 Now you are ready to run your own analysis under the "maggie" folder!
 
 ## Quick Usage
-### Command lines
-All the command line tools are stored in the 'bin' directory. Below is an example of using MAGGIE with FASTA files as inputs:
+All the executable scripts are stored in the `bin/` directory. Below is a toy example on CTCF allele-specific binding sites stored as FASTA files:
 ```bash
 python ./bin/maggie_fasta_input.py \
-./data/ASB/CTCF_binding_alleles.fa \
-./data/ASB/CTCF_nonbinding_alleles.fa \
--o ./data/ASB/maggie_output/ \
--p 1
+./data/AlleleSpecificBinding/CTCF_binding_alleles.fa \
+./data/AlleleSpecificBinding/CTCF_nonbinding_alleles.fa \
+-o ./data/AlleleSpecificBinding/maggie_output/ \
+-p 8
 ```
 
-### Python package
-```python
-from maggie import score, utils
-
-# read positive and negative sequences
-pos_seq_file = './data/ASB/CTCF_binding_alleles.fa'
-neg_seq_file = './data/ASB/CTCF_nonbinding_alleles.fa'
-pos_seq_dict = utils.read_fasta(pos_seq_file)
-neg_seq_dict = utils.read_fasta(neg_seq_file)
-
-# load motif PWMs
-motif_dict = score.load_motifs('./data/JASPAR2020_CORE_vertebrates_motifs/')
-
-# test for one motif, and store p-values and score differences
-name, ID, _, pvals, score_diffs = score.test_one_motif(motif_dict['CTCF$MA0139.1'], pos_seq_dict, neg_seq_dict)
-
-# print results
-print('Signed -log10(p-value) for %s-%s is: %.2f' % (name, ID, pvals[0]))
-```
-
-## Example outputs
-An example of significant hits displayed in the HTML format for CTCF allele-specific binding sites looks like this:
+## Example output
+MAGGIE will display significant motifs in the HTML format. Here is an example for CTCF allele-specific binding sites:
 
 <p align="center">
 <img src="https://github.com/zeyang-shen/maggie/blob/master/image/html_example.png" width="900" height="200">
 </p>
+
+Header: total number of samples
 
 Column 1: ranking based on absolute value of -log10(p-value)
 
@@ -81,11 +62,14 @@ Column 9: mean value of non-zero motif score differences
 
 Column 10: distribution of non-zero motif score differences
 
+## Documentation
+Please go to our [wiki page](https://github.com/zeyang-shen/maggie/wiki) for more detailed usage of MAGGIE.
 
 ## Contact
 If you enconter a problem when using the software, you can
-1. post an issue on [Issue](https://github.com/zeyang-shen/maggie/issues) section
-2. or email Zeyang Shen by zes017@ucsd.edu
+1. check the [FAQ](https://github.com/zeyang-shen/maggie/wiki/FAQ) page
+2. post an issue on [Issue](https://github.com/zeyang-shen/maggie/issues) section
+3. or email Zeyang Shen by zes017@ucsd.edu
 
 ## License
 

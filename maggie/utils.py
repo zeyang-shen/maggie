@@ -72,8 +72,10 @@ def cat_fasta_files(orig_fasta_files, mut_fasta_files):
     Concatenate sequences coming from multiple fasta files
     
     Input:
-        orig_fasta_files, mut_fasta_files required to be aligned in pairs
+        orig_fasta_files, mut_fasta_files (required to be aligned in pairs)
     
+    Outputs:
+        orig_seq_dict, mut_seq_dict (dictonary storing sequences in Biopython format)
     '''
     # combine sequences to dictionary
     orig_seq_dict = dict()
@@ -125,6 +127,9 @@ def data_prep(path, genomes, size=100, skiprows=0, file_format='bed'):
         elif file_format == 'vcf':
             chromID = elems[0]
             start, end = int(elems[1]), int(elems[1])
+        else:
+            print('ERROR: incorrect file format!')
+            return
         
         # rescale the regions
         mid = (start+end)//2
@@ -288,3 +293,25 @@ def annotateBED(gff_file, bed_df, overlap=None):
     return combine_df
 
 
+def jaspar2homer(homer_file, output_file):
+    '''
+    Convert motif format from HOMER to JASPAR
+    '''
+    pwm = []
+    with open(homer_file, 'r') as rf:
+        for line in rf:
+            if line[0] == '>':
+                motif_label = line[1:].split('\t')[0]
+                continue
+            pwm.append(line[:-1].split('\t'))
+    pwm = np.array(pwm).astype(float)
+    display_df = pd.DataFrame(pwm)
+    display_df.columns = ['A', 'C', 'G', 'T']
+    display_df.index.name = 'pos'
+    
+    nuc = ['A', 'C', 'G', 'T']
+    with open(output_file, 'w') as wf:
+        wf.write('>'+motif_label+'\t'+motif_label+'\n')
+        for i, p in enumerate(pwm.T):
+            wf.write('\t'.join([nuc[i], '[']+list((p*1000-1).astype(int).astype(str))+[']'])+'\n')
+    

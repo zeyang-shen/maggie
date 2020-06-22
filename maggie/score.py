@@ -53,7 +53,7 @@ def compute_scores(bio_motif, seq_dict, top_site=1):
         top_site: the number of top motif scores output for downstream analysis
     
     Outputs:
-        (motif name, motif scores, positions of scores on sequence)
+        a list of motif scores for input sequences sorted by alphabetically ordered keys
         
     Example:
         motif_dict = score.load_motifs('./data/JASPAR2020_CORE_vertebrates_motifs/')
@@ -94,6 +94,63 @@ def compute_scores(bio_motif, seq_dict, top_site=1):
             
     return scores
 
+def find_motif(bio_motif, seq_dict, top_site=1):
+    '''
+    compute motif scores across sequences and 
+    output top scores to represent log-likelihood of being bound by transcription factor
+    
+    Parameters:
+        bio_motif: Bio motif object used to compute motif scores
+        seq_dict: python dictionary containing sequences in IUPAC alphabet
+        top_site: the number of top motif scores output for downstream analysis
+    
+    Outputs:
+        motif scores, motif positions, motif strands
+        
+    Example:
+        motif_dict = score.load_motifs('./data/JASPAR2020_CORE_vertebrates_motifs/')
+        alphabet = Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA()
+        random_seq = {1:Seq.Seq('ACGCTAAACAGGAACTT', alphabet=alphabet)}
+        spi1_scores, spi1_positions, spi1_strands = compute_scores(motif_dict['SPI1$MA0080.4'], random_seq, 1)
+    '''
+    fwd_pssm = bio_motif.pssm
+    rev_pssm = fwd_pssm.reverse_complement()
+    scores = []
+    pos = []
+    strands = []
+    alphabet = Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA()
+    sorted_ids = sorted(seq_dict.keys())
+    for sid in sorted_ids:
+        seq = seq_dict[sid]
+        seq = Seq.Seq(str(seq), alphabet=alphabet)
+        if len(seq) < len(bio_motif):
+            sys.exit('ERROR: sequence lengths are too short to calculate motif score!')
+        fwd_scores = fwd_pssm.calculate(seq) # scores for forward orientation
+        rev_scores = rev_pssm.calculate(seq) # scores for reverse orientation
+        if type(fwd_scores) == np.float32:
+            fwd_scores = [fwd_scores]
+        if type(rev_scores) == np.float32:
+            rev_scores = [rev_scores]
+        
+        concat_scores = np.array(list(fwd_scores) + list(rev_scores))
+        if sum(np.isnan(concat_scores)) == len(concat_scores):
+            max_pos = np.array([-1])
+            max_scores = np.array([0])
+        else:
+            concat_scores[np.isnan(concat_scores)] = -100
+            max_pos = np.argsort(concat_scores)[::-1][:top_site]
+            max_scores = np.array(concat_scores)[max_pos]
+        scores.append(max_scores)
+        pos.append(max_pos%len(fwd_scores))
+        div = max_pos/len(fwd_scores)
+        if div < 0:
+            strands.append('N/A')
+        elif div <= 1:
+            strands.append('+')
+        else:
+            strands.append('-')
+        
+    return np.array(scores), np.array(pos), np.array(strands)
 
 def test_one_motif(bio_motif, orig_seq_dict, mut_seq_dict, top_site=1):
     '''

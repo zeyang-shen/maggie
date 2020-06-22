@@ -26,17 +26,12 @@ if __name__ == "__main__":
                         help="output directory; by default, will create a new folder under current path",
                         default='.',
                         type=str)
-    parser.add_argument("-p", 
-                        help="number of processors to run",
-                        default=1,
-                        type=int)
     args = parser.parse_args()
     
     vcf_file = args.vcfFile
     genome = args.genome
     overlap = args.overlap
     output_dir = args.output
-    proc = args.p
     
     # Create folder to store outputs
     if not os.path.isdir(output_dir):

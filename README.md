@@ -1,3 +1,8 @@
+[![python-version](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
+[![Build Status](https://travis-ci.org/{ORG-or-USERNAME}/{REPO-NAME}.png?branch=master)](https://travis-ci.org/{ORG-or-USERNAME}/{REPO-NAME})
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/zeyang-shen/maggie/issues)
+[![DOI](https://zenodo.org/badge/DOI/10.1101/2020.01.30.925917.svg)](https://doi.org/10.1101/2020.01.30.925917)
+
 # MAGGIE
 MAGGIE provides a framework for identifying DNA sequence motifs mediating transcription factor binding and function. By leveraging measurements and genetic variation information from different genotypes (human individuals, animal strains, or alleles), MAGGIE associates the mutation of DNA sequence motif with various types of epigenomic features, including but not limited to transcription factor binding, open chromatin, histone modification, and stimulus response of regulatory elements. 
 
@@ -13,11 +18,13 @@ First, copy the github folder and go into the "maggie" folder:
 git clone https://github.com/zeyang-shen/maggie.git
 cd maggie
 ```
-Next, configure an environment where MAGGIE can work. Anaconda is required for environment setup and package installation (https://www.anaconda.com/download/#macos). After installing the anaconda, run the following command to automatically create an environment named "maggie" with required dependencies:
+Next, configure an environment where MAGGIE can work. Anaconda is required for environment setup and package installation (https://www.anaconda.com/download/#macos). 
+
+After installing the anaconda, run the following command to automatically create an environment named "maggie" with required dependencies:
 ```bash
 conda env create --file environment.yml
 ```
-After setting up a new environment, activate the environment:
+After setting up the environment, activate it:
 ```bash
 conda activate maggie
 ```

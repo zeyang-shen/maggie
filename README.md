@@ -1,5 +1,4 @@
 [![python-version](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
-[![Build Status](https://travis-ci.org/{ORG-or-USERNAME}/{REPO-NAME}.png?branch=master)](https://travis-ci.org/{ORG-or-USERNAME}/{REPO-NAME})
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/zeyang-shen/maggie/issues)
 [![DOI](https://zenodo.org/badge/DOI/10.1101/2020.01.30.925917.svg)](https://doi.org/10.1101/2020.01.30.925917)
 

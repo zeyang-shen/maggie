@@ -14,7 +14,7 @@ if __name__ == "__main__":
                         action='store_true')
     parser.add_argument("-o", "--output", 
                         help="output directory; by default, will put the downloaded files in ./data/genomes/",
-                        default='./data/genomes/',
+                        default=os.path.dirname(__file__)+'/../data/genomes/',
                         type=str)
     args = parser.parse_args()
     

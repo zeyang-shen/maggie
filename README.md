@@ -30,7 +30,13 @@ conda activate maggie
 Now you are ready to run your own analysis under the "maggie" folder!
 
 ## Quick Usage
-All the executable scripts are stored in the `bin/` directory. Below is a toy example on CTCF allele-specific binding sites stored as FASTA files:
+All the executable scripts are stored in the `bin/` directory. Here is the usage of MAGGIE on a toy example of CTCF allele-specific binding sites stored in FASTA files.
+
+Let's first go into the cloned folder:
+```bash
+cd maggie
+```
+Then you can run the script for FASTA inputs as below:
 ```bash
 python ./bin/maggie_fasta_input.py \
 ./data/AlleleSpecificBinding/CTCF_binding_alleles.fa \
@@ -38,6 +44,15 @@ python ./bin/maggie_fasta_input.py \
 -o ./data/AlleleSpecificBinding/maggie_output/ \
 -p 8
 ```
+After the job is done, open the "mergedSignificant.html" file at "data/AlleleSpecificBinding/maggie_output/" with your web browser and take a look at the significant motifs. 
+
+Alternatively, you can add the `bin/` directory to your `PATH` in order to execute those scripts from anywhere:
+```bash
+export PATH=/path/to/your/cloned/maggie/bin:$PATH
+```
+Then you can execute the previous script by `maggie_fasta_input.py` directly.
+
+Go to our [tutorials](https://github.com/zeyang-shen/maggie/wiki/Tutorial) for usage of MAGGIE in other cases. 
 
 ## Example output
 MAGGIE will display significant motifs in the HTML format. Here is an example for CTCF allele-specific binding sites:

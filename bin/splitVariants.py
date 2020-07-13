@@ -1,14 +1,15 @@
 #!/usr/bin/env python
+import os
+import argparse
+
 import sys
-sys.path.append('.')
+sys.path.append(os.path.dirname(__file__)+'/..')
 
 from maggie import utils
 
 import numpy as np
 import pandas as pd
 
-import os
-import argparse
 import requests
 
 if __name__ == "__main__":
@@ -44,7 +45,7 @@ if __name__ == "__main__":
     
     # download annotation file
     if len(genome.split('.')) == 1: # download reference genome
-        gff_path = './data/genomes/'+genome+'.gff3'
+        gff_path = os.path.dirname(__file__)+'/../data/genomes/'+genome+'.gff3'
         if not os.path.exists(gff_path):
             print('Downloading annotation file for', genome)
             try:

@@ -1,14 +1,14 @@
 #!/usr/bin/env python
+import os
+import argparse
+
 import sys
-sys.path.append('.')
+sys.path.append(os.path.dirname(__file__)+'/..')
 
 from maggie import score, utils, visual
 
 import numpy as np
 import pandas as pd
-
-import os
-import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='MAGGIE framework working with FASTA files')
@@ -20,7 +20,7 @@ if __name__ == "__main__":
                         type=str)
     parser.add_argument("--motifPath",
                         help="path to the motif files",
-                        default="./data/JASPAR2020_CORE_vertebrates_motifs/",
+                        default=os.path.dirname(__file__)+"/../data/JASPAR2020_CORE_vertebrates_motifs/",
                         type=str)
     parser.add_argument("-m", "--motifs", 
                         help="spcify motifs to compute; multiple motifs should be separated by comma without space like 'SPI1,CEBPB'",

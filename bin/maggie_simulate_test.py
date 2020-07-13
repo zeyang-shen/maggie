@@ -1,14 +1,14 @@
 #!/usr/bin/env python
+import os
+import argparse
+
 import sys
-sys.path.append('.')
+sys.path.append(os.path.dirname(__file__)+'/..')
 
 from maggie import score, utils, visual, simulate
 
 import numpy as np
 import pandas as pd
-
-import os
-import argparse
 
 def check_positive(value):
     ivalue = int(value)
@@ -50,7 +50,7 @@ if __name__ == "__main__":
                         type=check_0_1_range)
     parser.add_argument("--motifPath",
                         help="path to the motif files",
-                        default="./data/JASPAR2020_CORE_vertebrates_motifs/",
+                        default=os.path.dirname(__file__)+"/../data/JASPAR2020_CORE_vertebrates_motifs/",
                         type=str)
     parser.add_argument("-o", "--output", 
                         help="output directory; by default, will create a new folder under current path",

@@ -1,6 +1,9 @@
 #!/usr/bin/env python
+import os
+import argparse
+
 import sys
-sys.path.append('.')
+sys.path.append(os.path.dirname(__file__)+'/..')
 
 from maggie import score, utils, visual
 
@@ -9,8 +12,6 @@ import pandas as pd
 
 from Bio import Seq
 
-import os
-import argparse
 import requests
 
 if __name__ == "__main__":
@@ -41,7 +42,7 @@ if __name__ == "__main__":
                         type=int)
     parser.add_argument("--motifPath",
                         help="path to the motif files in JASPAR format",
-                        default="./data/JASPAR2020_CORE_vertebrates_motifs/",
+                        default=os.path.dirname(__file__)+"/../data/JASPAR2020_CORE_vertebrates_motifs/",
                         type=str)
     parser.add_argument("-m", "--motifs", 
                         help="spcify motifs to compute; multiple motifs should be separated by comma without space in between (e.g., -m SPI1,CEBPB)",
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     
     # step 1: get surrounding sequences
     if len(genome.split('.')) == 1: # download reference genome
-        genome_path = './data/genomes/'+genome+'.fa'
+        genome_path = os.path.dirname(__file__)+'/../data/genomes/'+genome+'.fa'
         if not os.path.exists(genome_path):
             print('Downloading reference genome', genome)
             try:

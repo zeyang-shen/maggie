@@ -1,3 +1,5 @@
+### v0.3.4 - 06/12/2020
+    Add script to find differential regions based on two BED files
 ### v0.3.3 - 05/10/2020
     Add function to split the input variants given in VCF file based on genomic annotations in GFF3 file
 ### v0.3.2 - 05/03/2020

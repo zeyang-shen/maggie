@@ -1,3 +1,4 @@
+import sys
 import os
 import multiprocessing as mp
 
@@ -42,7 +43,7 @@ def load_motifs(motif_dir, pseudocounts=0.05, key='full'):
     return motif_dict
 
 
-def compute_scores(bio_motif, seq_dict, top_site=1):
+def compute_scores(bio_motif, seq_dict, top_site=1, force=False):
     '''
     compute motif scores across sequences and 
     output top scores to represent log-likelihood of being bound by transcription factor
@@ -72,7 +73,11 @@ def compute_scores(bio_motif, seq_dict, top_site=1):
         seq = seq_dict[sid]
         seq = Seq.Seq(str(seq), alphabet=alphabet)
         if len(seq) < len(bio_motif):
-            sys.exit('ERROR: sequence lengths are too short to calculate motif score!')
+            if force:
+                scores.append(np.array([0]))
+                continue
+            else:
+                sys.exit('ERROR: sequence lengths are too short to calculate motif score!')
         fwd_scores = fwd_pssm.calculate(seq) # scores for forward orientation
         rev_scores = rev_pssm.calculate(seq) # scores for reverse orientation
         if type(fwd_scores) == np.float32:

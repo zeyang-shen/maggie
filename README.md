@@ -1,6 +1,6 @@
 [![python-version](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/zeyang-shen/maggie/issues)
-[![DOI](https://zenodo.org/badge/DOI/10.1101/2020.01.30.925917.svg)](https://doi.org/10.1101/2020.01.30.925917)
+[![DOI](https://zenodo.org/badge/DOI/10.1101/2020.01.30.925917.svg)](https://doi.org/10.1093/bioinformatics/btaa476)
 
 # MAGGIE
 MAGGIE provides a framework for identifying DNA sequence motifs mediating transcription factor binding and function. By leveraging measurements and genetic variation information from different genotypes (human individuals, animal strains, or alleles), MAGGIE associates the mutation of DNA sequence motif with various types of epigenomic features, including but not limited to transcription factor binding, open chromatin, histone modification, and stimulus response of regulatory elements. 
@@ -86,6 +86,11 @@ Column 10: distribution of non-zero motif score differences
 ## Documentation
 Please go to our [wiki page](https://github.com/zeyang-shen/maggie/wiki) for more detailed usage of MAGGIE.
 
+## Citation
+If you use the algorithms described in MAGGIE, the software, or the NK-$\kappa$b ChIP-seq data at [GEO:GSE144070](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE144070), please cite
+
+[Shen, et al. MAGGIE: leveraging genetic variation to identify DNA sequence motifs mediating transcription factor binding and function. Bioinformatics, 2020](https://doi.org/10.1093/bioinformatics/btaa476)
+
 ## Contact
 If you enconter a problem when using the software, you can
 1. check the [FAQ](https://github.com/zeyang-shen/maggie/wiki/FAQ) page
@@ -93,7 +98,6 @@ If you enconter a problem when using the software, you can
 3. or email Zeyang Shen by zes017@ucsd.edu
 
 ## License
-
 [This project is licensed under GNU GPL v3](https://github.com/zeyang-shen/maggie/blob/master/LICENSE)
 
 ## Contributors

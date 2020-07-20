@@ -5,14 +5,14 @@ import Bio
 from Bio import motifs, SeqIO
 
 
-def read_fasta(fasta_file, skip_duplicate=True):
+def read_fasta(fasta_file, skip_duplicate=True, fmt='fasta'):
     '''
     Read in sequences
     '''
     alphabet = Bio.Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA() # need to use this alphabet for motif score calculation
     id_seq_dict = {} # {sequenceID: fastq sequence}
     duplicate_keys = []
-    for seq_record in SeqIO.parse(fasta_file, "fasta"):  
+    for seq_record in SeqIO.parse(fasta_file, fmt):  
         seq_record.seq.alphabet = alphabet
         if seq_record.id in id_seq_dict.keys():
             duplicate_keys.append(seq_record.id)

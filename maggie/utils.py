@@ -104,7 +104,7 @@ def load_genome(ref_path):
     return ref_dict
 
 
-def data_prep(path, genomes, size=100, skiprows=0, file_format='bed'):
+def data_prep(path, genomes, size=None, skiprows=0, file_format='bed'):
     '''
     Extract sequences based on reference genome and input file with information of location
     '''
@@ -132,9 +132,10 @@ def data_prep(path, genomes, size=100, skiprows=0, file_format='bed'):
             return
         
         # rescale the regions
-        mid = (start+end)//2
-        start = mid - size//2
-        end = mid + size//2
+        if size is not None:
+            mid = (start+end)//2
+            start = mid - size//2
+            end = mid + size//2
         try:
             seq = genomes[chromID][start:end]
         except:

@@ -60,12 +60,18 @@ if __name__ == "__main__":
             start2 = d2_cur.iloc[d2_idx, 1]
             end2 = d2_cur.iloc[d2_idx, 2]
             if start2 > end1:
-                if d1_cur.iloc[d1_idx, 3] >= score_cutoff:
+                try:
+                    if float(d1_cur.iloc[d1_idx, 3]) >= score_cutoff:
+                        d1_spec.append(d1_cur.index[d1_idx])
+                except:
                     d1_spec.append(d1_cur.index[d1_idx])
                 d1_idx += 1
                 continue
             if start1 > end2:
-                if d2_cur.iloc[d2_idx, 3] >= score_cutoff:
+                try:
+                    if float(d2_cur.iloc[d2_idx, 3]) >= score_cutoff:
+                        d2_spec.append(d2_cur.index[d2_idx])
+                except:
                     d2_spec.append(d2_cur.index[d2_idx])
                 d2_idx += 1
                 continue
@@ -86,18 +92,30 @@ if __name__ == "__main__":
     d1_spec_df = d1.loc[d1_spec]
     d2_spec_df = d2.loc[d2_spec]
     if output_format == 'peak':
-        d1_spec_df = d1_spec_df[[0,1,2,5]]
-        d2_spec_df = d2_spec_df[[0,1,2,5]]
-        d1_spec_df.index.name = 'PeakID'
-        d2_spec_df.index.name = 'PeakID'
-        d1_spec_df.columns = ['chr', 'start', 'end', 'strand']
-        d2_spec_df.columns = ['chr', 'start', 'end', 'strand']
-        d1_spec_df.to_csv(output_file1, sep='\t')
-        d2_spec_df.to_csv(output_file2, sep='\t')
+        d1_out_df = d1_spec_df[[0,1,2]]
+        d2_out_df = d2_spec_df[[0,1,2]]
+        d1_out_df.index.name = 'PeakID'
+        d2_out_df.index.name = 'PeakID'
+        d1_out_df.columns = ['chr', 'start', 'end']
+        d2_out_df.columns = ['chr', 'start', 'end']
+        #add strand column
+        if len(d1_spec_df.columns) >= 5:
+            d1_out_df['strand'] = d1_spec_df[5]
+        else:
+            d1_out_df['strand'] = ['+']*len(d1_out_df)
+        if len(d2_spec_df.columns) >= 5:
+            d2_out_df['strand'] = d2_spec_df[5]
+        else:
+            d2_out_df['strand'] = ['+']*len(d2_out_df)
+        #save to file
+        d1_out_df.to_csv(output_file1, sep='\t')
+        d2_out_df.to_csv(output_file2, sep='\t')
     elif output_format == 'bed':
-        d1_spec_df[6] = d1_spec_df.index
-        d2_spec_df[6] = d2_spec_df.index
-        d1_spec_df.to_csv(output_file1, sep='\t', index=False, header=False)
-        d2_spec_df.to_csv(output_file2, sep='\t', index=False, header=False)
+        d1_out_df = d1_spec_df[[0,1,2]]
+        d2_out_df = d2_spec_df[[0,1,2]]
+        d1_out_df['ID'] = d1_spec_df.index
+        d2_out_df['ID'] = d2_spec_df.index
+        d1_out_df.to_csv(output_file1, sep='\t', index=False, header=False)
+        d2_out_df.to_csv(output_file2, sep='\t', index=False, header=False)
     else:
         print('ERROR: Unexpected output format! Please specify either "peak" or "bed"')

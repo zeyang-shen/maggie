@@ -1,3 +1,7 @@
+### v1.0.1 - 11/22/2020
+    Fixed bugs that will not terminate parallele processes when computing motif scores
+### v1.0 - 10/15/2020
+    Official release of MAGGIE v1.0!
 ### v0.3.4 - 06/12/2020
     Add script to find differential regions based on two BED files
 ### v0.3.3 - 05/10/2020

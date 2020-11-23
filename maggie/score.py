@@ -43,7 +43,7 @@ def load_motifs(motif_dir, pseudocounts=0.05, key='full'):
     return motif_dict
 
 
-def compute_scores(bio_motif, seq_dict, top_site=1, force=False):
+def compute_scores(bio_motif, seq_dict, top_site=1):
     '''
     compute motif scores across sequences and 
     output top scores to represent log-likelihood of being bound by transcription factor
@@ -73,11 +73,10 @@ def compute_scores(bio_motif, seq_dict, top_site=1, force=False):
         seq = seq_dict[sid]
         seq = Seq.Seq(str(seq), alphabet=alphabet)
         if len(seq) < len(bio_motif):
-            if force:
-                scores.append(np.array([0]))
-                continue
-            else:
-                sys.exit('ERROR: sequence lengths are too short to calculate motif score!')
+            print('ERROR: length of sequence '+sid+' is too short!')
+            scores.append(np.array([0]))
+            continue
+        
         fwd_scores = fwd_pssm.calculate(seq) # scores for forward orientation
         rev_scores = rev_pssm.calculate(seq) # scores for reverse orientation
         if type(fwd_scores) == np.float32:
@@ -116,7 +115,7 @@ def find_motif(bio_motif, seq_dict, top_site=1):
         motif_dict = score.load_motifs('./data/JASPAR2020_CORE_vertebrates_motifs/')
         alphabet = Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA()
         random_seq = {1:Seq.Seq('ACGCTAAACAGGAACTT', alphabet=alphabet)}
-        spi1_scores, spi1_positions, spi1_strands = compute_scores(motif_dict['SPI1$MA0080.4'], random_seq, 1)
+        spi1_scores, spi1_positions, spi1_strands = find_motif(motif_dict['SPI1$MA0080.4'], random_seq, 1)
     '''
     fwd_pssm = bio_motif.pssm
     rev_pssm = fwd_pssm.reverse_complement()
@@ -148,12 +147,15 @@ def find_motif(bio_motif, seq_dict, top_site=1):
         scores.append(max_scores)
         pos.append(max_pos%len(fwd_scores))
         div = max_pos/len(fwd_scores)
-        if div < 0:
-            strands.append('N/A')
-        elif div <= 1:
-            strands.append('+')
-        else:
-            strands.append('-')
+        tmp_strands = []
+        for dv in div:
+            if dv < 0:
+                tmp_strands.append('N/A')
+            elif dv <= 1:
+                tmp_strands.append('+')
+            else:
+                tmp_strands.append('-')
+        strands.append(tmp_strands) 
         
     return np.array(scores), np.array(pos), np.array(strands)
 
@@ -181,9 +183,11 @@ def test_one_motif(bio_motif, orig_seq_dict, mut_seq_dict, top_site=1):
     if len(nonzero_diff) < 10:
         tmp_stat = 0
         tmp_pv = 1
+        tmp_sign = 1
     else:
-        tmp_stat, tmp_pv = wilcoxon(score_diff)
-    pv_.append(-np.log10(tmp_pv)*np.sign(np.median(nonzero_diff)))
+        tmp_stat, tmp_pv = wilcoxon(nonzero_diff)
+        tmp_sign = np.sign(np.median(nonzero_diff))
+    pv_.append(-np.log10(tmp_pv)*tmp_sign)
     stat_.append(tmp_stat)
     # Bootstrapping
     for k in range(999):
@@ -192,9 +196,11 @@ def test_one_motif(bio_motif, orig_seq_dict, mut_seq_dict, top_site=1):
         if len(nonzero_diff) < 10:
             tmp_stat = 0
             tmp_pv = 1
+            tmp_sign = 1
         else:
-            tmp_stat, tmp_pv = wilcoxon(score_diff_sampled)
-        pv_.append(-np.log10(tmp_pv)*np.sign(np.median(nonzero_diff)))
+            tmp_stat, tmp_pv = wilcoxon(nonzero_diff)
+            tmp_sign = np.sign(np.median(nonzero_diff))
+        pv_.append(-np.log10(tmp_pv)*tmp_sign)
         stat_.append(tmp_stat)
     return (bio_motif.name, bio_motif.matrix_id, stat_, pv_, list(score_diff))
 

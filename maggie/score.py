@@ -73,7 +73,7 @@ def compute_scores(bio_motif, seq_dict, top_site=1):
         seq = seq_dict[sid]
         seq = Seq.Seq(str(seq), alphabet=alphabet)
         if len(seq) < len(bio_motif):
-            print('ERROR: length of sequence '+sid+' is too short!')
+            print('ERROR: length of sequence', sid, 'is too short!')
             scores.append(np.array([0]))
             continue
         

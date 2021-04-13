@@ -82,12 +82,14 @@ def cat_fasta_files(orig_fasta_files, mut_fasta_files):
     mut_seq_dict = dict()
     for i in range(len(orig_fasta_files)):
         # original files
-        tmp_dict1 = read_fasta(orig_fasta_files[i])
-        tmp_dict1 = dict([(orig_fasta_files[i]+'|'+k, v) for k, v in tmp_dict1.items()])
+        o_file = orig_fasta_files[i].strip()
+        tmp_dict1 = read_fasta(o_file)
+        tmp_dict1 = dict([(o_file+'|'+k, v) for k, v in tmp_dict1.items()])
         orig_seq_dict.update(tmp_dict1)
         # mutated files
-        tmp_dict2 = read_fasta(mut_fasta_files[i])
-        tmp_dict2 = dict([(mut_fasta_files[i]+'|'+k, v) for k, v in tmp_dict2.items()])
+        m_file = mut_fasta_files[i].strip()
+        tmp_dict2 = read_fasta(m_file)
+        tmp_dict2 = dict([(m_file+'|'+k, v) for k, v in tmp_dict2.items()])
         mut_seq_dict.update(tmp_dict2)
     return orig_seq_dict, mut_seq_dict
 

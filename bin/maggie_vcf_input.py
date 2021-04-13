@@ -158,7 +158,9 @@ if __name__ == "__main__":
     pos_data = utils.data_prep(vcf_file, genomes, size=size, skiprows=skips+1, file_format='vcf')
     chr_list = ['chr'+str(ch) if 'chr' not in str(ch) else str(ch) for ch in vcf_df.iloc[:,0]]
     mids = vcf_df.iloc[:,1]
-    seq_keys = [c+'.'+str(mids[k]) for k,c in enumerate(chr_list)]
+    refs = vcf_df.iloc[:,ref_col-1]
+    alts = vcf_df.iloc[:,alt_col-1]
+    seq_keys = [c+':'+str(mids[k])+'_'+str(refs[k])+'_'+str(alts[k]) for k,c in enumerate(chr_list)]
     seq_dict = dict()
     for i in range(len(pos_data)):
         seq_dict[seq_keys[i]] = pos_data[i][0]
@@ -170,8 +172,13 @@ if __name__ == "__main__":
     low_seqs = []
     indices = []
     for snp in seq_dict.keys():
-        ref_allele = vcf_df.loc[snp][ref_col-1].upper()
-        alt_allele = vcf_df.loc[snp][alt_col-1].upper()
+        try:
+            ref_allele = vcf_df.loc[snp][ref_col-1].upper()
+            alt_allele = vcf_df.loc[snp][alt_col-1].upper()
+        except:
+            print('Skipping:', snp)
+            continue
+            
         if str(ref_allele) == 'nan':
             print('Skipping:', snp)
             continue

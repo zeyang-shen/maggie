@@ -72,12 +72,15 @@ if __name__ == "__main__":
     
     # read in sequences
     if len(orig_file.split(',')) > 1:
+        orig_fasta_files = orig_file.split(',')
+        mut_fasta_files = mut_file.split(',')
+        if len(orig_fasta_files) != len(mut_fasta_files):
+            sys.exit('ERROR: unequal positive and negative files!')
         try:
-            orig_seq_dict, mut_seq_dict = utils.cat_fasta_files(orig_file.split(','), mut_file.split(','))
+            orig_seq_dict, mut_seq_dict = utils.cat_fasta_files(orig_fasta_files, mut_fasta_files)
         except:
-            print('Failed to concatenate multiple fasta files.')
-            sys.exit(1)
-        print('Successfully concetenated fasta files!')
+            sys.exit('Failed to concatenate multiple fasta files!')
+        print('Successfully concetenated fasta files')
     else:
         orig_seq_dict = utils.read_fasta(orig_file)
         mut_seq_dict = utils.read_fasta(mut_file)

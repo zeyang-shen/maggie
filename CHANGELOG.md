@@ -1,3 +1,6 @@
+### v1.1 - 11/22/2020
+    Fixed the installation error caused by outdated logomaker package dependency (https://pypi.org/project/logomaker/)
+    Fixed bugs in concatenating files and maggie_vcf_input.py
 ### v1.0.1 - 11/22/2020
     Fixed bugs that will not terminate parallele processes when computing motif scores
 ### v1.0 - 10/15/2020

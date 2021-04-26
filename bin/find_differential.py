@@ -2,30 +2,26 @@
 import sys
 import os
 import argparse
-
 import pandas as pd
 
-def find_overlap(start1, end1, start2, end2):
-    "find the overlap between the range (start1, end1) and the range (start2, end2)"
-    return max(max((end2-start1), 0) - max((end2-end1), 0) - max((start2-start1), 0), 0)
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Find differential ranges from two BED files')
+    parser = argparse.ArgumentParser(description='Find differential ranges from two BED files; bedtools required')
     parser.add_argument("-i1", 
-                        help="BED file 1",
+                        help="BED file 1 (required)",
                         type=str)
     parser.add_argument("-i2", 
-                        help="BED file 2",
+                        help="BED file 2 (required)",
                         type=str)
     parser.add_argument("-o1", 
-                        help="output file to store sites specific to BED file 1",
+                        help="output file to store sites specific to BED file 1 (optional)",
                         type=str)
     parser.add_argument("-o2", 
-                        help="output file to store sites specific to BED file 2",
+                        help="output file to store sites specific to BED file 2 (optional)",
                         type=str)
     parser.add_argument("--format", 
-                        help="specify the output file format; default is BED",
-                        choices=['peak', 'bed'])
+                        help="specify the output file format: HOMER peak file or bed file; default is BED",
+                        choices=['peak', 'bed'], 
+                        default='bed')
     
     args = parser.parse_args()
     
@@ -35,87 +31,37 @@ if __name__ == "__main__":
     output_file2 = args.o2
     output_format = args.format
     
-    #read in data
-    d1 = pd.read_csv(input_file1, sep='\t', index_col=3, header=None)
-    d2 = pd.read_csv(input_file2, sep='\t', index_col=3, header=None)
-    chr_keys = set(d1[0])
-    chr_keys.update(set(d2[0]))
-
+    #set default output file
+    if output_file1 is None:
+        gettf1="echo `realpath "+str(input_file1)+ "`"
+        gettf2="echo `realpath "+str(input_file2)+ "`"
+        input_file1_path = os.popen(gettf1).read().strip()
+        input_file2_path = os.popen(gettf2).read().strip()
+        if output_format == 'bed':
+            output_file1 = '/'.join(input_file1_path.split('/')[:-1])+'/input1_specific.bed'
+            output_file2 = '/'.join(input_file1_path.split('/')[:-1])+'/input2_specific.bed'
+        elif output_format == 'peak':
+            output_file1 = '/'.join(input_file1_path.split('/')[:-1])+'/input1_specific.txt'
+            output_file2 = '/'.join(input_file1_path.split('/')[:-1])+'/input2_specific.txt'
+    
     #find differential sites
-    overlap_cutoff = 0
-    score_cutoff = 0
-    d1_spec = []
-    d2_spec = []
-    common = []
-    for k in chr_keys:
-        d1_cur = d1.loc[d1[0] == k]
-        d2_cur = d2.loc[d2[0] == k]
-        d1_cur = d1_cur.sort_values(by=1, ascending=True)
-        d2_cur = d2_cur.sort_values(by=1, ascending=True)
-        d1_idx = 0
-        d2_idx = 0
-        while d1_idx < len(d1_cur) and d2_idx < len(d2_cur):
-            start1 = d1_cur.iloc[d1_idx, 1]
-            end1 = d1_cur.iloc[d1_idx, 2]
-            start2 = d2_cur.iloc[d2_idx, 1]
-            end2 = d2_cur.iloc[d2_idx, 2]
-            if start2 > end1:
-                try:
-                    if float(d1_cur.iloc[d1_idx, 3]) >= score_cutoff:
-                        d1_spec.append(d1_cur.index[d1_idx])
-                except:
-                    d1_spec.append(d1_cur.index[d1_idx])
-                d1_idx += 1
-                continue
-            if start1 > end2:
-                try:
-                    if float(d2_cur.iloc[d2_idx, 3]) >= score_cutoff:
-                        d2_spec.append(d2_cur.index[d2_idx])
-                except:
-                    d2_spec.append(d2_cur.index[d2_idx])
-                d2_idx += 1
-                continue
-            ov = find_overlap(start1, end1, start2, end2)
-            if ov > overlap_cutoff:
-                common.append((d1_cur.index[d1_idx], d2_cur.index[d2_idx], ov))
-                d1_idx += 1
-                d2_idx += 1
-        if d1_idx < len(d1_cur):
-            for rest_ in range(d1_idx, len(d1_cur)):
-                d1_spec.append(d1_cur.index[rest_])
-
-        if d2_idx < len(d2_cur):
-            for rest_ in range(d2_idx, len(d2_cur)):
-                d2_spec.append(d2_cur.index[rest_])
-        
-    #output differential sites
-    d1_spec_df = d1.loc[d1_spec]
-    d2_spec_df = d2.loc[d2_spec]
+    cmd="bedtools intersect -a "+input_file1+" -b "+input_file2+" -v > "+output_file1
+    result = os.system(cmd)
+    if result != 0:
+        sys.exit('Termination: failed to run bedtools!')
+    cmd="bedtools intersect -a "+input_file2+" -b "+input_file1+" -v > "+output_file2
+    result = os.system(cmd)
+    if result != 0:
+        sys.exit('Termination: failed to run bedtools!')
+    
+    #format to peak files
     if output_format == 'peak':
-        d1_out_df = d1_spec_df[[0,1,2]]
-        d2_out_df = d2_spec_df[[0,1,2]]
-        d1_out_df.index.name = 'PeakID'
-        d2_out_df.index.name = 'PeakID'
-        d1_out_df.columns = ['chr', 'start', 'end']
-        d2_out_df.columns = ['chr', 'start', 'end']
-        #add strand column
-        if len(d1_spec_df.columns) >= 5:
-            d1_out_df['strand'] = d1_spec_df[5]
-        else:
-            d1_out_df['strand'] = ['+']*len(d1_out_df)
-        if len(d2_spec_df.columns) >= 5:
-            d2_out_df['strand'] = d2_spec_df[5]
-        else:
-            d2_out_df['strand'] = ['+']*len(d2_out_df)
-        #save to file
-        d1_out_df.to_csv(output_file1, sep='\t')
-        d2_out_df.to_csv(output_file2, sep='\t')
-    elif output_format == 'bed':
-        d1_out_df = d1_spec_df[[0,1,2]]
-        d2_out_df = d2_spec_df[[0,1,2]]
-        d1_out_df['ID'] = d1_spec_df.index
-        d2_out_df['ID'] = d2_spec_df.index
-        d1_out_df.to_csv(output_file1, sep='\t', index=False, header=False)
-        d2_out_df.to_csv(output_file2, sep='\t', index=False, header=False)
-    else:
-        print('ERROR: Unexpected output format! Please specify either "peak" or "bed"')
+        d1 = pd.read_csv(output_file1, sep='\t', header=None)
+        d2 = pd.read_csv(output_file2, sep='\t', header=None)
+        d1 = d1[[3,0,1,2,5,4]]
+        d2 = d2[[3,0,1,2,5,4]]
+        d1.columns = ['ID', 'chr', 'start', 'end', 'strand', 'score']
+        d2.columns = ['ID', 'chr', 'start', 'end', 'strand', 'score']
+        d1.to_csv(output_file1, sep='\t', index=False, header=True)
+        d2.to_csv(output_file1, sep='\t', index=False, header=True)
+    print('Complete! Outputs saved in', output_file1, ',', output_file2)

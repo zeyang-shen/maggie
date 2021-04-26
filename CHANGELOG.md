@@ -1,3 +1,5 @@
+### v1.1.1 - 04/25/2021
+    Updated find_differential.py script to speed up the finding of differential regions by integrating bedtools
 ### v1.1 - 04/13/2021
     Fixed the installation error caused by outdated logomaker package dependency (https://pypi.org/project/logomaker/)
     Fixed bugs in concatenating files and maggie_vcf_input.py

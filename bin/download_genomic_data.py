@@ -22,6 +22,10 @@ if __name__ == "__main__":
     annot = args.annot
     output_dir = args.output
     
+    try:
+        os.mkdir(output_dir)
+    except:
+        None
     genome_path = output_dir+genome+'.fa'
     if os.path.exists(genome_path):
         valid = {"yes": True, "y": True, "ye": True, "no": False, "n": False}
@@ -37,7 +41,7 @@ if __name__ == "__main__":
             else:
                 sys.stdout.write("Please respond with 'yes' (or 'y') or 'no' (or 'n').\n")
             
-    print('Downloading reference genome', genome)
+    print('Downloading reference genome', genome, 'to', output_dir)
     try:
         url = 'http://homer.ucsd.edu/zeyang/maggie/genomes/'+genome+'.fa'
         r = requests.get(url, stream=True)

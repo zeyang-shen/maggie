@@ -121,9 +121,14 @@ if __name__ == "__main__":
     
     # step 1: get surrounding sequences
     if len(genome.split('.')) == 1: # download reference genome
-        genome_path = os.path.dirname(__file__)+'/../data/genomes/'+genome+'.fa'
+        genome_dir = os.path.dirname(__file__)+'/../data/genomes/'
+        try:
+            os.mkdir(genome_dir)
+        except:
+            None
+        genome_path = genome_dir+genome+'.fa'
         if not os.path.exists(genome_path):
-            print('Downloading reference genome', genome)
+            print('Downloading reference genome', genome, 'to', genome_dir)
             try:
                 url = 'http://homer.ucsd.edu/zeyang/maggie/genomes/'+genome+'.fa'
                 r = requests.get(url, stream=True)

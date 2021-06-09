@@ -11,7 +11,7 @@ Here is the overview of the method:
 <img src="https://github.com/zeyang-shen/maggie/blob/master/image/method.png" width="900" height="280">
 </p>
 
-## Installing MAGGIE
+## Installation
 First, copy the github folder and go into the "maggie" folder:
 ```bash
 git clone https://github.com/zeyang-shen/maggie.git

@@ -172,7 +172,6 @@ if __name__ == "__main__":
     
     # step 2: generate positive and negative sequences
     vcf_df.index = seq_keys
-    alphabet = Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA()
     high_seqs = []
     low_seqs = []
     indices = []
@@ -200,8 +199,8 @@ if __name__ == "__main__":
             continue
 
         indices.append(snp)
-        ref = Seq.Seq(ref, alphabet=alphabet)
-        alt = Seq.Seq(alt, alphabet=alphabet)
+        ref = Seq.Seq(ref)
+        alt = Seq.Seq(alt)
         beta = vcf_df.loc[snp][effect_col-1]
         # save high vs. low allele
         if beta > 0:
@@ -251,4 +250,4 @@ if __name__ == "__main__":
     visual.save_logos(motif_dict, folder=output_dir)
     visual.generate_html(folder=output_dir)
     print('Results are ready in %s' % (output_dir))
-    
+

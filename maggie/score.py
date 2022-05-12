@@ -50,7 +50,7 @@ def compute_scores(bio_motif, seq_dict, top_site=1):
     
     Parameters:
         bio_motif: Bio motif object used to compute motif scores
-        seq_dict: python dictionary containing sequences in IUPAC alphabet
+        seq_dict: python dictionary containing sequences
         top_site: the number of top motif scores output for downstream analysis
     
     Outputs:
@@ -58,20 +58,18 @@ def compute_scores(bio_motif, seq_dict, top_site=1):
         
     Example:
         motif_dict = score.load_motifs('./data/JASPAR2020_CORE_vertebrates_motifs/')
-        alphabet = Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA()
-        random_seq = {1:Seq.Seq('ACGCTAAACAGGAACTT', alphabet=alphabet)}
+        random_seq = {1:Seq.Seq('ACGCTAAACAGGAACTT')}
         spi1_scores = compute_scores(motif_dict['SPI1$MA0080.4'], random_seq, 1)
     '''
     fwd_pssm = bio_motif.pssm
     rev_pssm = fwd_pssm.reverse_complement()
     scores = []
     pos = []
-    alphabet = Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA()
     sorted_ids = sorted(seq_dict.keys())
     
     for sid in sorted_ids:
         seq = seq_dict[sid]
-        seq = Seq.Seq(str(seq), alphabet=alphabet)
+        seq = Seq.Seq(str(seq))
         if len(seq) < len(bio_motif):
             print('ERROR: length of sequence', sid, 'is too short!')
             scores.append(np.array([0]))
@@ -105,7 +103,7 @@ def find_motif(bio_motif, seq_dict, top_site=1):
     
     Parameters:
         bio_motif: Bio motif object used to compute motif scores
-        seq_dict: python dictionary containing sequences in IUPAC alphabet
+        seq_dict: python dictionary containing sequences
         top_site: the number of top motif scores output for downstream analysis
     
     Outputs:
@@ -113,8 +111,7 @@ def find_motif(bio_motif, seq_dict, top_site=1):
         
     Example:
         motif_dict = score.load_motifs('./data/JASPAR2020_CORE_vertebrates_motifs/')
-        alphabet = Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA()
-        random_seq = {1:Seq.Seq('ACGCTAAACAGGAACTT', alphabet=alphabet)}
+        random_seq = {1:Seq.Seq('ACGCTAAACAGGAACTT')}
         spi1_scores, spi1_positions, spi1_strands = find_motif(motif_dict['SPI1$MA0080.4'], random_seq, 1)
     '''
     fwd_pssm = bio_motif.pssm
@@ -122,11 +119,10 @@ def find_motif(bio_motif, seq_dict, top_site=1):
     scores = []
     pos = []
     strands = []
-    alphabet = Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA()
     sorted_ids = sorted(seq_dict.keys())
     for sid in sorted_ids:
         seq = seq_dict[sid]
-        seq = Seq.Seq(str(seq), alphabet=alphabet)
+        seq = Seq.Seq(str(seq))
         if len(seq) < len(bio_motif):
             sys.exit('ERROR: sequence lengths are too short to calculate motif score!')
         fwd_scores = fwd_pssm.calculate(seq) # scores for forward orientation
@@ -381,4 +377,4 @@ def combine_similar_motifs(input_df, similarity_cutoff=0.6):
                                'Median score difference', 'Mean score difference']]
 
     return merge_stats    
-    
+

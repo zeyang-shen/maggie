@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import pandas as pd
 
@@ -9,11 +10,9 @@ def read_fasta(fasta_file, skip_duplicate=True, fmt='fasta'):
     '''
     Read in sequences
     '''
-    alphabet = Bio.Seq.IUPAC.Alphabet.IUPAC.IUPACUnambiguousDNA() # need to use this alphabet for motif score calculation
     id_seq_dict = {} # {sequenceID: fastq sequence}
     duplicate_keys = []
     for seq_record in SeqIO.parse(fasta_file, fmt):  
-        seq_record.seq.alphabet = alphabet
         if seq_record.id in id_seq_dict.keys():
             duplicate_keys.append(seq_record.id)
         else:
@@ -296,7 +295,7 @@ def annotateBED(gff_file, bed_df, overlap=None):
     return combine_df
 
 
-def jaspar2homer(homer_file, output_file):
+def homer2jaspar(homer_file, output_file):
     '''
     Convert motif format from HOMER to JASPAR
     '''
@@ -317,4 +316,4 @@ def jaspar2homer(homer_file, output_file):
         wf.write('>'+motif_label+'\t'+motif_label+'\n')
         for i, p in enumerate(pwm.T):
             wf.write('\t'.join([nuc[i], '[']+list((p*1000-1).astype(int).astype(str))+[']'])+'\n')
-    
+

@@ -1,3 +1,5 @@
+### v1.2 - 05/11/2022
+    Fixed installation issue by adapting scripts to Python 3.9 and Biopython 1.79
 ### v1.1.1 - 04/25/2021
     Updated find_differential.py script to speed up the finding of differential regions by integrating bedtools
 ### v1.1 - 04/13/2021

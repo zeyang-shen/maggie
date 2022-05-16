@@ -1,4 +1,4 @@
-[![python-version](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
+[![python-version](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/zeyang-shen/maggie/issues)
 [![DOI](https://zenodo.org/badge/DOI/10.1093/bioinformatics/btaa476.svg)](https://doi.org/10.1093/bioinformatics/btaa476)
 
